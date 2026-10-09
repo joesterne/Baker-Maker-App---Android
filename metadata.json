@@ -1,0 +1,6 @@
+{
+  "name": "CrustCraft",
+  "description": "Companion app for automatic bread makers with custom sourdough and specialty flour recipes, step timer, ingredient notifications, and remote crust controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

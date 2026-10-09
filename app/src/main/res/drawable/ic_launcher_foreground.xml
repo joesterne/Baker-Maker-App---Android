@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Bread Loaf Base Body -->
+    <path
+        android:fillColor="#FFE0B2"
+        android:pathData="M32,68 C30,68 27,65 27,61 C27,47 38,36 54,36 C70,36 81,47 81,61 C81,65 78,68 76,68 Z" />
+
+    <!-- Loaf Lower Crust Tone -->
+    <path
+        android:fillColor="#FFCC80"
+        android:pathData="M27,61 C27,65 30,68 34,68 L74,68 C78,68 81,65 81,61 C81,58 80,55 78,53 C70,58 62,60 54,60 C46,60 38,58 30,53 C28,55 27,58 27,61 Z" />
+
+    <!-- Baker's Scoring Lines (Artisan Cuts) -->
+    <path
+        android:strokeColor="#BF6321"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:pathData="M40,43 C42,47 43,51 44,55" />
+    <path
+        android:strokeColor="#BF6321"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:pathData="M52,40 C54,46 55,51 55,56" />
+    <path
+        android:strokeColor="#BF6321"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:pathData="M64,43 C65,47 66,51 66,55" />
+
+    <!-- Golden Crust Highlight Arc -->
+    <path
+        android:strokeColor="#FFF8E1"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M35,46 C41,39 50,38 56,38" />
+
+    <!-- Baker's Tray / Paddle base -->
+    <path
+        android:fillColor="#E6A868"
+        android:pathData="M23,70 L85,70 C86.5,70 87,71.5 86,72.5 L83,75 C82.5,75.5 81.5,76 80.5,76 L27.5,76 C26.5,76 25.5,75.5 25,75 L22,72.5 C21,71.5 21.5,70 23,70 Z" />
+
+    <!-- Steam Aromas Rising from fresh baked loaf -->
+    <path
+        android:strokeColor="#FFE082"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M46,28 C44,25 48,23 46,20" />
+    <path
+        android:strokeColor="#FFE082"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M54,26 C52,23 56,21 54,18" />
+    <path
+        android:strokeColor="#FFE082"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M62,28 C60,25 64,23 62,20" />
+</vector>
