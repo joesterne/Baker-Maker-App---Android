@@ -30,6 +30,24 @@ class RecipeRepository(
     }
 
     /**
+     * Query recipes by category directly from Room
+     */
+    fun getRecipesByCategory(category: com.example.data.model.RecipeCategory): Flow<List<BreadRecipe>> {
+        return recipeDao.getRecipesByCategory(category).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    /**
+     * Query custom recipes by category directly from Room
+     */
+    fun getCustomRecipesByCategory(category: com.example.data.model.RecipeCategory): Flow<List<BreadRecipe>> {
+        return customRecipeDao.getCustomRecipesByCategory(category).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    /**
      * Search custom recipes directly via Room SQL query
      */
     fun searchCustomRecipes(query: String): Flow<List<BreadRecipe>> {
@@ -58,6 +76,11 @@ class RecipeRepository(
         customRecipeDao.insertCustomRecipe(customEntity)
         val entity = RecipeEntity.fromDomain(recipe)
         recipeDao.insertRecipe(entity)
+    }
+
+    suspend fun updateRecipePhoto(id: String, photoUri: String?) {
+        recipeDao.updateRecipePhoto(id, photoUri)
+        customRecipeDao.updateCustomRecipePhoto(id, photoUri)
     }
 
     suspend fun deleteRecipe(id: String) {

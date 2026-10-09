@@ -44,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -81,7 +82,7 @@ fun BakerMeasurementConverterCard(
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabTitles = listOf("Grams ↔ mL", "Cups ↔ Grams", "Spoons & Yeast", "Hydration %")
+    val tabTitles = listOf("Grams ↔ Ounces", "Recipe Scaler", "Grams ↔ mL", "Cups ↔ Grams", "Spoons & Yeast", "Hydration %")
 
     Card(
         modifier = modifier
@@ -124,7 +125,7 @@ fun BakerMeasurementConverterCard(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Precision density converter for grams, mL, cups & dough hydration",
+                            text = "Precision density converter, grams to ounces & recipe scaling",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -134,11 +135,12 @@ fun BakerMeasurementConverterCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Navigation Tabs
-            TabRow(
+            // Navigation Tabs (Scrollable for full touch targets)
+            ScrollableTabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 contentColor = MaterialTheme.colorScheme.primary,
+                edgePadding = 8.dp,
                 modifier = Modifier.clip(RoundedCornerShape(12.dp))
             ) {
                 tabTitles.forEachIndexed { index, title ->
@@ -161,15 +163,17 @@ fun BakerMeasurementConverterCard(
 
             // Tab Content
             when (selectedTab) {
-                0 -> GramsToMlConverterSection(
+                0 -> BakingUnitConverterSection()
+                1 -> RecipeScalerSection()
+                2 -> GramsToMlConverterSection(
                     defaultLiquid = settings.defaultLiquid,
                     cupStandardMl = settings.cupStandardMl
                 )
-                1 -> CupsToGramsConverterSection(
+                3 -> CupsToGramsConverterSection(
                     cupStandardMl = settings.cupStandardMl
                 )
-                2 -> SpoonsAndYeastConverterSection()
-                3 -> HydrationCalculatorSection()
+                4 -> SpoonsAndYeastConverterSection()
+                5 -> HydrationCalculatorSection()
             }
 
             Spacer(modifier = Modifier.height(16.dp))

@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 import com.example.data.model.BakingStage
 import com.example.data.model.BreadRecipe
 import com.example.data.model.CrustShade
-import com.example.data.model.FlourCategory
+import com.example.data.model.RecipeCategory
 import com.example.data.model.LoafSize
 import com.example.data.model.RecipeIngredient
 import com.example.data.model.YeastType
@@ -17,7 +17,7 @@ data class CustomRecipeEntity(
     val title: String,
     val subtitle: String,
     val description: String,
-    val category: FlourCategory,
+    val category: RecipeCategory,
     val primaryFlour: String,
     val specialtyFlours: List<String>,
     val yeastType: YeastType,
@@ -28,7 +28,8 @@ data class CustomRecipeEntity(
     val ingredients: List<RecipeIngredient>,
     val stages: List<BakingStage>,
     val bakerNotes: List<String>,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val photoUri: String? = null
 ) {
     fun toDomain(): BreadRecipe = BreadRecipe(
         id = id,
@@ -46,7 +47,8 @@ data class CustomRecipeEntity(
         ingredients = ingredients,
         stages = stages,
         bakerNotes = bakerNotes,
-        isCustom = true
+        isCustom = true,
+        photoUri = photoUri
     )
 
     companion object {
@@ -65,7 +67,8 @@ data class CustomRecipeEntity(
             totalTimeMinutes = recipe.totalTimeMinutes,
             ingredients = recipe.ingredients,
             stages = recipe.stages,
-            bakerNotes = recipe.bakerNotes
+            bakerNotes = recipe.bakerNotes,
+            photoUri = recipe.photoUri
         )
     }
 }

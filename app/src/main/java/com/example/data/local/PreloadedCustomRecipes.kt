@@ -3,8 +3,8 @@ package com.example.data.local
 import com.example.data.model.BakingStage
 import com.example.data.model.BakingStageType
 import com.example.data.model.CrustShade
-import com.example.data.model.FlourCategory
 import com.example.data.model.LoafSize
+import com.example.data.model.RecipeCategory
 import com.example.data.model.RecipeIngredient
 import com.example.data.model.YeastType
 
@@ -16,7 +16,7 @@ object PreloadedCustomRecipes {
             title = "Rosemary & Kalamata Olive Artisan Loaf",
             subtitle = "Custom Recipe • Mediterranean Herbed Sourdough",
             description = "Crafted in the custom recipe builder. High-hydration artisan sourdough studded with pitted Kalamata olives and fresh garden rosemary infused during the secondary knead phase.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "King Arthur Unbleached Bread Flour (450g)",
             specialtyFlours = listOf("Durum Semolina Rimacinata (50g)"),
             yeastType = YeastType.SOURDOUGH_STARTER,
@@ -54,9 +54,9 @@ object PreloadedCustomRecipes {
         CustomRecipeEntity(
             id = "custom_wildflower_honey_spelt",
             title = "Wildflower Honey & Ancient Spelt Loaf",
-            subtitle = "Custom Recipe • 100% Ancient Grain Hybrid",
-            description = "Custom whole grain formula combining nutty ancient spelt flour with wildflower honey and cultured buttermilk for a soft sandwich crumb.",
-            category = FlourCategory.SPELT_ANCIENT,
+            subtitle = "Custom Recipe • Enriched Sweet Honey Loaf",
+            description = "Custom sweet formula combining nutty ancient spelt flour with wildflower honey and cultured buttermilk for a delicate tender crumb.",
+            category = RecipeCategory.SWEET_LOAVES,
             primaryFlour = "Organic Stoneground Spelt Flour (350g)",
             specialtyFlours = listOf("Unbleached Bread Flour (150g)"),
             yeastType = YeastType.INSTANT_YEAST,
@@ -89,6 +89,44 @@ object PreloadedCustomRecipes {
             bakerNotes = listOf(
                 "Spelt gluten is more fragile than standard wheat. Keep knead gentle to avoid breaking gluten bonds.",
                 "Honey caramelizes readily; medium crust setting gives a golden finish."
+            )
+        ),
+        CustomRecipeEntity(
+            id = "custom_rustic_garlic_herb_white",
+            title = "Rustic Roasted Garlic & Herb White Bread",
+            subtitle = "Custom Recipe • Classic Yeast Bread Loaf",
+            description = "A savory yeast bread recipe for everyday sandwich slicing, loaded with roasted garlic cloves and dried Italian herbs mixed during the gluten development cycle.",
+            category = RecipeCategory.YEAST_BREAD,
+            primaryFlour = "Unbleached White Bread Flour (420g)",
+            specialtyFlours = listOf("Roasted Garlic Paste (20g)", "Italian Herb Mix"),
+            yeastType = YeastType.INSTANT_YEAST,
+            defaultLoafSize = LoafSize.ONE_HALF_LB,
+            defaultCrust = CrustShade.ARTISAN_CRISPY,
+            hydrationPercent = 67,
+            totalTimeMinutes = 195,
+            ingredients = listOf(
+                RecipeIngredient("rgh_1", "Warm Water (85°F)", "280 ml", 67f, BakingStageType.PREHEAT),
+                RecipeIngredient("rgh_2", "Extra Virgin Olive Oil", "20 ml", 4.8f, BakingStageType.PREHEAT),
+                RecipeIngredient("rgh_3", "Pure Cane Sugar", "15 g", 3.6f, BakingStageType.PREHEAT),
+                RecipeIngredient("rgh_4", "Unbleached Bread Flour", "420 g", 100f, BakingStageType.PREHEAT),
+                RecipeIngredient("rgh_5", "Instant Bread Yeast", "6 g", 1.4f, BakingStageType.PREHEAT),
+                RecipeIngredient("rgh_6", "Fine Sea Salt", "7 g", 1.7f, BakingStageType.PREHEAT),
+                RecipeIngredient("rgh_7", "Mashed Roasted Garlic", "20 g", 4.8f, BakingStageType.KNEAD_2, isAutoDispenser = true),
+                RecipeIngredient("rgh_8", "Dried Oregano & Thyme", "4 g", 1f, BakingStageType.KNEAD_2, isAutoDispenser = true)
+            ),
+            stages = listOf(
+                BakingStage(BakingStageType.PREHEAT, "Water & Flour Warmup", 15, 80, 10, 0),
+                BakingStage(BakingStageType.KNEAD_1, "Initial Hydration Knead", 10, 80, 0, 45),
+                BakingStage(BakingStageType.REST_AUTOLYSE, "Gluten Rest Period", 10, 80, 0, 0),
+                BakingStage(BakingStageType.KNEAD_2, "Garlic & Herb Distribution", 18, 82, 0, 110, hasIngredientAlert = true, alertTitle = "Add Roasted Garlic & Herbs"),
+                BakingStage(BakingStageType.RISE_1, "First Rise", 45, 84, 20, 0),
+                BakingStage(BakingStageType.PUNCH_DOWN, "Paddle Removal", 3, 84, 0, 25),
+                BakingStage(BakingStageType.RISE_2, "Intermediate Rest", 25, 86, 20, 0),
+                BakingStage(BakingStageType.RISE_3, "Final Loaf Rise", 35, 88, 30, 0),
+                BakingStage(BakingStageType.BAKE, "Crisp Hearth Bake", 34, 385, 90, 0)
+            ),
+            bakerNotes = listOf(
+                "Roast whole garlic heads with olive oil in advance until soft and sweet before adding to dough."
             )
         )
     )

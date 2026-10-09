@@ -1,5 +1,12 @@
 package com.example.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +19,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -28,6 +39,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +49,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,18 +60,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
 import com.example.data.model.BakingStage
 import com.example.data.model.BakingStageType
 import com.example.data.model.BreadRecipe
 import com.example.data.model.CrustShade
-import com.example.data.model.FlourCategory
 import com.example.data.model.LoafSize
+import com.example.data.model.RecipeCategory
 import com.example.data.model.RecipeIngredient
 import com.example.data.model.YeastType
+import java.io.File
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,10 +88,11 @@ fun RecipeEditorScreen(
     onSaveRecipe: (BreadRecipe) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var title by remember { mutableStateOf("") }
     var subtitle by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(FlourCategory.SOURDOUGH) }
+    var selectedCategory by remember { mutableStateOf(RecipeCategory.SOURDOUGH) }
     var categoryExpanded by remember { mutableStateOf(false) }
 
     var primaryFlour by remember { mutableStateOf("Unbleached Bread Flour") }
@@ -82,6 +103,71 @@ fun RecipeEditorScreen(
     var hydrationPercent by remember { mutableFloatStateOf(70f) }
     var selectedLoafSize by remember { mutableStateOf(LoafSize.ONE_HALF_LB) }
     var selectedCrust by remember { mutableStateOf(CrustShade.ARTISAN_CRISPY) }
+
+    // Loaf Photo State
+    var photoUri by remember { mutableStateOf<String?>(null) }
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && pendingCameraUri != null) {
+            photoUri = pendingCameraUri.toString()
+        }
+    }
+
+    val requestCameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            try {
+                val loafDir = File(context.filesDir, "loaf_photos").apply { mkdirs() }
+                val photoFile = File(loafDir, "loaf_custom_${System.currentTimeMillis()}.jpg")
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+                pendingCameraUri = uri
+                takePictureLauncher.launch(uri)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    val pickPhotoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let { sourceUri ->
+            try {
+                val loafDir = File(context.filesDir, "loaf_photos").apply { mkdirs() }
+                val photoFile = File(loafDir, "loaf_custom_${System.currentTimeMillis()}.jpg")
+                context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                    photoFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                val localUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+                photoUri = localUri.toString()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun launchCamera() {
+        val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            try {
+                val loafDir = File(context.filesDir, "loaf_photos").apply { mkdirs() }
+                val photoFile = File(loafDir, "loaf_custom_${System.currentTimeMillis()}.jpg")
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+                pendingCameraUri = uri
+                takePictureLauncher.launch(uri)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        } else {
+            requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     // Ingredients list
     val ingredients = remember {
@@ -186,7 +272,8 @@ fun RecipeEditorScreen(
                                     "Custom formula saved to CrustCraft library.",
                                     "Adjust bake temperature offset if crust is too dark or light."
                                 ),
-                                isCustom = true
+                                isCustom = true,
+                                photoUri = photoUri
                             )
                             onSaveRecipe(newRecipe)
                         },
@@ -214,6 +301,111 @@ fun RecipeEditorScreen(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Loaf Photo Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("editor_loaf_photo_card"),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Completed Loaf Photo",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (photoUri != null) {
+                            TextButton(onClick = { photoUri = null }) {
+                                Text("Remove", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (photoUri != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        ) {
+                            AsyncImage(
+                                model = photoUri,
+                                contentDescription = "Loaf photo preview",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { launchCamera() },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Retake")
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    pickPhotoLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Gallery")
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = "Take a photo of your loaf with the camera or pick from your device gallery.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { launchCamera() },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("editor_camera_btn")
+                            ) {
+                                Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Take Photo")
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    pickPhotoLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("editor_gallery_btn")
+                            ) {
+                                Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Gallery")
+                            }
+                        }
+                    }
+                }
+            }
+
             // Basic Info
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -247,16 +439,17 @@ fun RecipeEditorScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Category Selector
+                    // Recipe Category Selector
                     ExposedDropdownMenuBox(
                         expanded = categoryExpanded,
                         onExpandedChange = { categoryExpanded = it }
                     ) {
                         OutlinedTextField(
-                            value = selectedCategory.label,
+                            value = "${selectedCategory.emoji} ${selectedCategory.label}",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Flour Category") },
+                            label = { Text("Recipe Category *") },
+                            supportingText = { Text(selectedCategory.description) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -266,9 +459,21 @@ fun RecipeEditorScreen(
                             expanded = categoryExpanded,
                             onDismissRequest = { categoryExpanded = false }
                         ) {
-                            FlourCategory.values().filter { it != FlourCategory.ALL }.forEach { cat ->
+                            RecipeCategory.userSelectable.forEach { cat ->
                                 DropdownMenuItem(
-                                    text = { Text(cat.label) },
+                                    text = {
+                                        Column {
+                                            Text(
+                                                text = "${cat.emoji} ${cat.label}",
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = cat.description,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    },
                                     onClick = {
                                         selectedCategory = cat
                                         categoryExpanded = false

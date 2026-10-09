@@ -79,17 +79,27 @@ enum class YeastType(val label: String, val bloomNeeded: Boolean, val fermentati
     FRESH_CAKE_YEAST("Fresh Baker's Compressed Yeast", true, "Artisanal aroma, crumble into liquid")
 }
 
-enum class FlourCategory(val label: String, val iconName: String) {
-    ALL("All Recipes", "all"),
-    CUSTOM("Custom Recipes", "custom"),
-    SOURDOUGH("Wild Sourdough", "sourdough"),
-    SPELT_ANCIENT("Spelt & Ancient Grains", "spelt"),
-    DARK_RYE("Dark Rye & Roggenbrot", "rye"),
-    WHOLE_WHEAT("Stoneground Whole Wheat", "whole_wheat"),
-    BRIOCHE_SWEET("Brioche & Enriched", "brioche"),
-    GLUTEN_FREE("Gluten-Free Artisan", "gluten_free"),
-    SPECIALTY("Shokupan & Milk Bread", "specialty")
+enum class RecipeCategory(
+    val label: String,
+    val description: String,
+    val emoji: String,
+    val iconName: String
+) {
+    ALL("All Recipes", "All recipes in library", "📚", "all"),
+    SOURDOUGH("Sourdough", "Natural levain & wild fermentation", "🌾", "sourdough"),
+    YEAST_BREAD("Yeast Bread", "Classic sandwich, artisan & rustic loaves", "🍞", "yeast_bread"),
+    SWEET_LOAVES("Sweet Loaves", "Enriched brioche, milk bread & fruit loaves", "🍯", "sweet_loaves"),
+    WHOLE_GRAIN("Whole Grain", "100% whole wheat, spelt, rye & ancient grains", "🌾", "whole_grain"),
+    GLUTEN_FREE("Gluten-Free", "Specialized allergen-safe bread formulas", "🌿", "gluten_free"),
+    CUSTOM("Custom Recipes", "Your own custom recipes in Room DB", "💾", "custom");
+
+    companion object {
+        val userSelectable: List<RecipeCategory>
+            get() = listOf(SOURDOUGH, YEAST_BREAD, SWEET_LOAVES, WHOLE_GRAIN, GLUTEN_FREE)
+    }
 }
+
+typealias FlourCategory = RecipeCategory
 
 enum class MachineState {
     IDLE,
@@ -126,7 +136,7 @@ data class BreadRecipe(
     val title: String,
     val subtitle: String,
     val description: String,
-    val category: FlourCategory,
+    val category: RecipeCategory,
     val primaryFlour: String,
     val specialtyFlours: List<String> = emptyList(),
     val yeastType: YeastType,
@@ -138,7 +148,8 @@ data class BreadRecipe(
     val stages: List<BakingStage>,
     val bakerNotes: List<String> = emptyList(),
     val isCustom: Boolean = false,
-    val zojirushiRecommendedCourse: ZojirushiMenuCourse = ZojirushiMenuCourse.EUROPEAN
+    val zojirushiRecommendedCourse: ZojirushiMenuCourse = ZojirushiMenuCourse.EUROPEAN,
+    val photoUri: String? = null
 )
 
 data class IngredientAlert(

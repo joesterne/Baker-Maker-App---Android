@@ -4,7 +4,7 @@ import com.example.data.model.BakingStage
 import com.example.data.model.BakingStageType
 import com.example.data.model.BreadRecipe
 import com.example.data.model.CrustShade
-import com.example.data.model.FlourCategory
+import com.example.data.model.RecipeCategory
 import com.example.data.model.LoafSize
 import com.example.data.model.RecipeIngredient
 import com.example.data.model.YeastType
@@ -35,7 +35,7 @@ object ZojirushiManualRecipes {
             title = "Zojirushi Light Sourdough Bread",
             subtitle = "Official Virtuoso Plus Manual • Course 1 (White)",
             description = "The authentic sourdough formula from the Zojirushi BB-PDC20 Recipe Book. Combines cultured sourdough starter with apple cider vinegar and lemon juice for an authentic tangy sourdough flavor profile baked using the 2.0 lb horizontal pan.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "Bread Flour (390g / 3 cups)",
             specialtyFlours = listOf("Cultured Sourdough Starter (Pan Base)", "Apple Cider Vinegar", "Lemon Juice"),
             yeastType = YeastType.SOURDOUGH_STARTER,
@@ -78,7 +78,7 @@ object ZojirushiManualRecipes {
             title = "Zojirushi Sourdough Starter",
             subtitle = "Official Virtuoso Plus Manual • Course 12 (Starter)",
             description = "The official Course 12 cycle for culturing a vigorous sourdough starter inside the BB-PDC20. The breadmaker gently heats the chamber to a thermostatically controlled 82°F for wild fermentation over 2 hours.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "Bread Flour (260g / 2 cups)",
             specialtyFlours = emptyList(),
             yeastType = YeastType.ACTIVE_DRY_YEAST,
@@ -110,7 +110,7 @@ object ZojirushiManualRecipes {
             title = "Zojirushi Basic White Bread",
             subtitle = "Official Virtuoso Plus Manual • Course 1 (White)",
             description = "The gold standard 2.0 lb horizontal loaf from the BB-PDC20 manual. Dual kneading blades produce a silky, tender crumb with a delicate golden crust browned by the upper lid heater.",
-            category = FlourCategory.ALL,
+            category = RecipeCategory.YEAST_BREAD,
             primaryFlour = "Bread Flour (553g / 4-¼ cups)",
             specialtyFlours = listOf("Dry Milk (8g / 2 Tbsp)", "Unsalted Butter (35g / 2-½ Tbsp)"),
             yeastType = YeastType.INSTANT_YEAST,
@@ -152,7 +152,7 @@ object ZojirushiManualRecipes {
             title = "Zojirushi 100% Whole Wheat Bread",
             subtitle = "Official Virtuoso Plus Manual • Course 2 (Whole Wheat)",
             description = "Rich, 100% whole grain loaf with honey and vital wheat gluten. The BB-PDC20 Whole Wheat course extends the preheat stage to allow the bran to thoroughly absorb water and soften before kneading.",
-            category = FlourCategory.WHOLE_WHEAT,
+            category = RecipeCategory.WHOLE_GRAIN,
             primaryFlour = "Whole Wheat Flour (553g / 4-¼ cups)",
             specialtyFlours = listOf("Vital Wheat Gluten (32g / 4 Tbsp)", "Honey (40g / 2 Tbsp)"),
             yeastType = YeastType.INSTANT_YEAST,
@@ -196,7 +196,7 @@ object ZojirushiManualRecipes {
             title = "Zojirushi French Bread",
             subtitle = "Official Virtuoso Plus Manual • Course 3 (European)",
             description = "Crisp, crunchy, crackling crust with a chewy open interior. Course 3 (European) utilizes minimal fat and leverages the upper lid heating element to achieve an authentic European bakery crust.",
-            category = FlourCategory.SPECIALTY,
+            category = RecipeCategory.YEAST_BREAD,
             primaryFlour = "Bread Flour (553g / 4-¼ cups)",
             specialtyFlours = listOf("Dry Milk (12g / 3 Tbsp)"),
             yeastType = YeastType.INSTANT_YEAST,
@@ -237,7 +237,7 @@ object ZojirushiManualRecipes {
             title = "Zojirushi Rustic Italian Herb Bread",
             subtitle = "Official Virtuoso Plus Manual • Course 3 (European)",
             description = "Savory artisan loaf infused with extra virgin olive oil, dried oregano, and aromatic sweet basil. The European crust setting gives it a blistered golden exterior and fragrant, tender interior.",
-            category = FlourCategory.SPECIALTY,
+            category = RecipeCategory.YEAST_BREAD,
             primaryFlour = "Bread Flour (553g / 4-¼ cups)",
             specialtyFlours = listOf("Extra Virgin Olive Oil (24g)", "Dried Basil (2g)", "Dried Oregano (2g)"),
             yeastType = YeastType.INSTANT_YEAST,
@@ -281,7 +281,7 @@ object ZojirushiManualRecipes {
             title = "Zojirushi Gluten-Free Raisin Bread",
             subtitle = "Official Virtuoso Plus Manual • Course 5 (Gluten Free)",
             description = "Formulated specially for the BB-PDC20's specialized Gluten Free course. High-liquid batter kneaded by twin blades and stabilized by xanthan gum and potato starch, skipping multi-rise cycles for an immediate high-temperature bake.",
-            category = FlourCategory.GLUTEN_FREE,
+            category = RecipeCategory.GLUTEN_FREE,
             primaryFlour = "Brown Rice Flour (228g) & Potato Starch (320g)",
             specialtyFlours = listOf("Potato Starch (320g)", "Xanthan Gum (8g / 1 Tbsp)", "Honey (60g)"),
             yeastType = YeastType.ACTIVE_DRY_YEAST,
@@ -321,7 +321,7 @@ object ZojirushiManualRecipes {
             title = "Zojirushi Pizzeria Dough",
             subtitle = "Official Virtuoso Plus Manual • Course 11 (Dough)",
             description = "Creates two 12-inch crispy thin crusts or one deep dish 14-inch pie. Course 11 handles the full kneading and bulk rise cycle, leaving dough elastic, relaxed, and ready for hand stretching.",
-            category = FlourCategory.SPECIALTY,
+            category = RecipeCategory.YEAST_BREAD,
             primaryFlour = "Bread Flour (450g / 3-½ cups)",
             specialtyFlours = listOf("Extra Virgin Olive Oil (24g)"),
             yeastType = YeastType.INSTANT_YEAST,

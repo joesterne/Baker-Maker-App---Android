@@ -11,12 +11,12 @@ import com.example.data.model.BreadMakerModel
 import com.example.data.model.BreadRecipe
 import com.example.data.model.BreadStageTimer
 import com.example.data.model.CrustShade
-import com.example.data.model.FlourCategory
 import com.example.data.model.IngredientAlert
 import com.example.data.model.LoafSize
 import com.example.data.model.MachineState
 import com.example.data.model.MachineTelemetry
 import com.example.data.model.PreloadedTimerRoutines
+import com.example.data.model.RecipeCategory
 import com.example.data.model.StageTimersState
 import com.example.data.model.StepCompletionAlert
 import com.example.data.model.TimerRoutine
@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
@@ -52,8 +53,8 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
     private val _customSearchQuery = MutableStateFlow("")
     val customSearchQuery: StateFlow<String> = _customSearchQuery.asStateFlow()
 
-    private val _selectedCategory = MutableStateFlow(FlourCategory.ALL)
-    val selectedCategory: StateFlow<FlourCategory> = _selectedCategory.asStateFlow()
+    private val _selectedCategory = MutableStateFlow(RecipeCategory.ALL)
+    val selectedCategory: StateFlow<RecipeCategory> = _selectedCategory.asStateFlow()
 
     private val _selectedRecipe = MutableStateFlow<BreadRecipe?>(null)
     val selectedRecipe: StateFlow<BreadRecipe?> = _selectedRecipe.asStateFlow()
@@ -126,8 +127,8 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
         _selectedCategory
     ) { all, query, category ->
         all.filter { recipe ->
-            val matchesCategory = (category == FlourCategory.ALL) ||
-                    (category == FlourCategory.CUSTOM && recipe.isCustom) ||
+            val matchesCategory = (category == RecipeCategory.ALL) ||
+                    (category == RecipeCategory.CUSTOM && recipe.isCustom) ||
                     (recipe.category == category)
             val matchesQuery = query.isBlank() ||
                     recipe.title.contains(query, ignoreCase = true) ||
@@ -142,6 +143,21 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
         initialValue = PreloadedRecipes.RECIPES
     )
 
+    // Pre-computed counts per recipe category for organization tabs & badges
+    val categoryCounts: StateFlow<Map<RecipeCategory, Int>> = recipes.map { all ->
+        val counts = mutableMapOf<RecipeCategory, Int>()
+        counts[RecipeCategory.ALL] = all.size
+        counts[RecipeCategory.CUSTOM] = all.count { it.isCustom }
+        RecipeCategory.userSelectable.forEach { cat ->
+            counts[cat] = all.count { it.category == cat }
+        }
+        counts
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyMap()
+    )
+
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
     }
@@ -150,7 +166,7 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
         _customSearchQuery.value = query
     }
 
-    fun onCategorySelect(category: FlourCategory) {
+    fun onCategorySelect(category: RecipeCategory) {
         _selectedCategory.value = category
     }
 
@@ -773,6 +789,18 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.deleteCustomRecipe(recipeId)
             showFeedback("Deleted custom recipe from Room database")
+        }
+    }
+
+    fun updateRecipePhoto(recipeId: String, photoUri: String?) {
+        viewModelScope.launch {
+            repository.updateRecipePhoto(recipeId, photoUri)
+            if (_telemetry.value.activeRecipe?.id == recipeId) {
+                _telemetry.update { current ->
+                    current.copy(activeRecipe = current.activeRecipe?.copy(photoUri = photoUri))
+                }
+            }
+            showFeedback(if (photoUri != null) "Saved loaf photo to recipe" else "Removed loaf photo")
         }
     }
 

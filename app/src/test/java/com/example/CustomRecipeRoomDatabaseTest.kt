@@ -10,7 +10,7 @@ import com.example.data.local.PreloadedCustomRecipes
 import com.example.data.model.BakingStage
 import com.example.data.model.BakingStageType
 import com.example.data.model.CrustShade
-import com.example.data.model.FlourCategory
+import com.example.data.model.RecipeCategory
 import com.example.data.model.LoafSize
 import com.example.data.model.RecipeIngredient
 import com.example.data.model.YeastType
@@ -54,10 +54,10 @@ class CustomRecipeRoomDatabaseTest {
         customDao.insertAllCustomRecipes(PreloadedCustomRecipes.INITIAL_CUSTOM_RECIPES)
 
         val count = customDao.getCustomRecipeCount()
-        assertEquals(2, count)
+        assertEquals(3, count)
 
         val recipes = customDao.getAllCustomRecipes().first()
-        assertEquals(2, recipes.size)
+        assertEquals(3, recipes.size)
 
         val oliveRecipe = recipes.firstOrNull { it.id == "custom_rosemary_olive_artisan" }
         assertNotNull(oliveRecipe)
@@ -108,7 +108,7 @@ class CustomRecipeRoomDatabaseTest {
             title = "Jalapeño Cheddar Sourdough",
             subtitle = "Spicy artisan cheese loaf",
             description = "Sharp cheddar and diced jalapeños in a tangy sourdough base.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "Bread Flour (450g)",
             specialtyFlours = listOf("Sharp White Cheddar (100g)"),
             yeastType = YeastType.SOURDOUGH_STARTER,
@@ -145,5 +145,54 @@ class CustomRecipeRoomDatabaseTest {
         customDao.deleteCustomRecipeById("custom_test_jalapeno_cheddar")
         val fetchedDeleted = customDao.getCustomRecipeById("custom_test_jalapeno_cheddar")
         assertNull(fetchedDeleted)
+    }
+
+    @Test
+    fun `categorizing recipes in Room supports Sourdough, Yeast Bread, and Sweet Loaves`() = runBlocking {
+        customDao.insertAllCustomRecipes(PreloadedCustomRecipes.INITIAL_CUSTOM_RECIPES)
+
+        // Sourdough category check
+        val sourdoughList = customDao.getCustomRecipesByCategory(RecipeCategory.SOURDOUGH).first()
+        assertEquals(1, sourdoughList.size)
+        assertEquals("Rosemary & Kalamata Olive Artisan Loaf", sourdoughList[0].title)
+        assertEquals(RecipeCategory.SOURDOUGH, sourdoughList[0].category)
+
+        // Sweet Loaves category check
+        val sweetLoavesList = customDao.getCustomRecipesByCategory(RecipeCategory.SWEET_LOAVES).first()
+        assertEquals(1, sweetLoavesList.size)
+        assertEquals("Wildflower Honey & Ancient Spelt Loaf", sweetLoavesList[0].title)
+        assertEquals(RecipeCategory.SWEET_LOAVES, sweetLoavesList[0].category)
+
+        // Yeast Bread category check
+        val yeastBreadList = customDao.getCustomRecipesByCategory(RecipeCategory.YEAST_BREAD).first()
+        assertEquals(1, yeastBreadList.size)
+        assertEquals("Rustic Roasted Garlic & Herb White Bread", yeastBreadList[0].title)
+        assertEquals(RecipeCategory.YEAST_BREAD, yeastBreadList[0].category)
+
+        // Verify count by category
+        assertEquals(1, customDao.getCustomRecipeCountByCategory(RecipeCategory.SOURDOUGH))
+        assertEquals(1, customDao.getCustomRecipeCountByCategory(RecipeCategory.SWEET_LOAVES))
+        assertEquals(1, customDao.getCustomRecipeCountByCategory(RecipeCategory.YEAST_BREAD))
+    }
+
+    @Test
+    fun `loaf photo uri persists and updates in Room database`() = runBlocking {
+        customDao.insertAllCustomRecipes(PreloadedCustomRecipes.INITIAL_CUSTOM_RECIPES)
+        val recipe = customDao.getCustomRecipeById("custom_rosemary_olive_artisan")
+        assertNotNull(recipe)
+        assertNull(recipe!!.photoUri)
+
+        val testPhotoUri = "content://com.example.fileprovider/loaf_photos/loaf_rosemary_12345.jpg"
+        customDao.updateCustomRecipePhoto("custom_rosemary_olive_artisan", testPhotoUri)
+
+        val updated = customDao.getCustomRecipeById("custom_rosemary_olive_artisan")
+        assertNotNull(updated)
+        assertEquals(testPhotoUri, updated!!.photoUri)
+
+        // Clear photo
+        customDao.updateCustomRecipePhoto("custom_rosemary_olive_artisan", null)
+        val cleared = customDao.getCustomRecipeById("custom_rosemary_olive_artisan")
+        assertNotNull(cleared)
+        assertNull(cleared!!.photoUri)
     }
 }

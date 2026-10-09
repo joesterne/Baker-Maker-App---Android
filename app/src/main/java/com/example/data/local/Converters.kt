@@ -4,7 +4,7 @@ import androidx.room.TypeConverter
 import com.example.data.model.BakingStage
 import com.example.data.model.BakingStageType
 import com.example.data.model.CrustShade
-import com.example.data.model.FlourCategory
+import com.example.data.model.RecipeCategory
 import com.example.data.model.LoafSize
 import com.example.data.model.RecipeIngredient
 import com.example.data.model.YeastType
@@ -67,13 +67,18 @@ class Converters {
     }
 
     @TypeConverter
-    fun fromFlourCategory(value: FlourCategory): String = value.name
+    fun fromRecipeCategory(value: RecipeCategory): String = value.name
 
     @TypeConverter
-    fun toFlourCategory(value: String): FlourCategory = try {
-        FlourCategory.valueOf(value)
+    fun toRecipeCategory(value: String): RecipeCategory = try {
+        RecipeCategory.valueOf(value)
     } catch (_: Exception) {
-        FlourCategory.ALL
+        when (value) {
+            "BRIOCHE_SWEET" -> RecipeCategory.SWEET_LOAVES
+            "SPELT_ANCIENT", "DARK_RYE", "WHOLE_WHEAT" -> RecipeCategory.WHOLE_GRAIN
+            "SPECIALTY" -> RecipeCategory.YEAST_BREAD
+            else -> RecipeCategory.ALL
+        }
     }
 
     @TypeConverter

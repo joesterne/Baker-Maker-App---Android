@@ -22,16 +22,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Grain
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -53,7 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.BreadRecipe
-import com.example.data.model.FlourCategory
+import com.example.data.model.RecipeCategory
 import com.example.ui.theme.BreadCrustGolden
 import com.example.ui.theme.BreadWarmWheat
 import com.example.ui.theme.ProofingBlue
@@ -62,9 +66,10 @@ import com.example.ui.theme.ProofingBlue
 fun RecipeLibraryScreen(
     recipes: List<BreadRecipe>,
     searchQuery: String,
-    selectedCategory: FlourCategory,
+    selectedCategory: RecipeCategory,
+    categoryCounts: Map<RecipeCategory, Int> = emptyMap(),
     onSearchChange: (String) -> Unit,
-    onCategoryChange: (FlourCategory) -> Unit,
+    onCategoryChange: (RecipeCategory) -> Unit,
     onRecipeClick: (BreadRecipe) -> Unit,
     onLoadRecipeIntoMachine: (BreadRecipe) -> Unit,
     onCreateCustomRecipe: () -> Unit,
@@ -143,14 +148,21 @@ fun RecipeLibraryScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Search Input
+            // Search Input with category context
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchChange,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("recipe_search_input"),
-                placeholder = { Text("Search sourdough, spelt, rye, flours...") },
+                placeholder = {
+                    Text(
+                        if (selectedCategory == RecipeCategory.ALL)
+                            "Search all recipes (Sourdough, Yeast Bread, Sweet Loaves)..."
+                        else
+                            "Search within ${selectedCategory.label}..."
+                    )
+                },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -171,7 +183,7 @@ fun RecipeLibraryScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Category Filter Chips
+            // Category Filter Chips with Emojis & Recipe Counts
             val categoryScroll = rememberScrollState()
             Row(
                 modifier = Modifier
@@ -179,20 +191,87 @@ fun RecipeLibraryScreen(
                     .horizontalScroll(categoryScroll),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FlourCategory.values().forEach { category ->
+                RecipeCategory.values().forEach { category ->
                     val isSelected = selectedCategory == category
+                    val count = categoryCounts[category]
                     FilterChip(
                         selected = isSelected,
                         onClick = { onCategoryChange(category) },
+                        leadingIcon = {
+                            Text(text = category.emoji, fontSize = 13.sp)
+                        },
                         label = {
-                            Text(
-                                text = category.label,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = category.label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                                if (count != null && count > 0) {
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                                    ) {
+                                        Text(
+                                            text = "$count",
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
                         },
                         shape = RoundedCornerShape(10.dp)
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Active Category Context Banner
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "${selectedCategory.emoji} ${selectedCategory.label}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = selectedCategory.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
+                    }
+                    val currentCount = if (selectedCategory == RecipeCategory.ALL) recipes.size else (categoryCounts[selectedCategory] ?: recipes.size)
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = "$currentCount Loaves",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    }
                 }
             }
 
@@ -303,51 +382,67 @@ private fun RecipeCatalogCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = recipe.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (recipe.photoUri != null) {
+                        AsyncImage(
+                            model = recipe.photoUri,
+                            contentDescription = "${recipe.title} photo",
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(10.dp)),
+                            contentScale = ContentScale.Crop
                         )
-                        if (recipe.isCustom) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = recipe.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            if (recipe.isCustom) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Storage,
-                                        contentDescription = "Room DB",
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.size(11.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(3.dp))
-                                    Text(
-                                        text = "Room DB",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Storage,
+                                            contentDescription = "Room DB",
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(11.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text(
+                                            text = "Room DB",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
                                 }
                             }
                         }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = recipe.subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = recipe.subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
                 }
 
                 // Hydration % Pill

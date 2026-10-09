@@ -4,7 +4,7 @@ import com.example.data.model.BakingStage
 import com.example.data.model.BakingStageType
 import com.example.data.model.BreadRecipe
 import com.example.data.model.CrustShade
-import com.example.data.model.FlourCategory
+import com.example.data.model.RecipeCategory
 import com.example.data.model.LoafSize
 import com.example.data.model.RecipeIngredient
 import com.example.data.model.YeastType
@@ -20,7 +20,7 @@ object PreloadedRecipes {
             title = "Zojirushi Virtuoso® Sourdough Loaf",
             subtitle = "Twin-Blade Knead • 2.0 lb European Course",
             description = "Formulated specifically for the Zojirushi BB-PDC20's 2.0 lb horizontal pan with dual kneading blades. Utilizes the Course #3 European cycle with upper lid heating element for an evenly browned, golden blistered crust.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "Unbleached Bread Flour (500g)",
             specialtyFlours = listOf("Stoneground Whole Wheat (50g)"),
             yeastType = YeastType.SOURDOUGH_STARTER,
@@ -60,7 +60,7 @@ object PreloadedRecipes {
             title = "San Francisco Artisan Sourdough",
             subtitle = "Wild Levain Ferment • Blistered Ear Crust",
             description = "A classic gold-standard sourdough featuring a 100% hydration wild starter, an extended autolyse stage for maximum enzymatic flavor, and a blistering 390°F final bake.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "Unbleached Bread Flour (12.7% protein)",
             specialtyFlours = listOf("Organic Whole Rye Flour (5%)"),
             yeastType = YeastType.SOURDOUGH_STARTER,
@@ -140,7 +140,7 @@ object PreloadedRecipes {
             title = "Country Blonde Sourdough Boule",
             subtitle = "75% Hydration • Open Custard Crumb",
             description = "A golden, high-moisture sourdough made with unbleached white wheat and stoneground whole wheat. Produces a light, open crumb and a crisp crackling crust.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "Hard Red Winter Wheat Flour (90%)",
             specialtyFlours = listOf("Stoneground Whole Wheat (10%)"),
             yeastType = YeastType.SOURDOUGH_STARTER,
@@ -177,7 +177,7 @@ object PreloadedRecipes {
             title = "Tartine-Style Rustic Sourdough",
             subtitle = "78% Hydration • Deep Caramel Crust",
             description = "Inspired by coastal California artisanal bakeries. High hydration creates an airy, irregular honeycomb crumb structure with a deeply caramelized dark crust.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "Unbleached Bread Flour (85%)",
             specialtyFlours = listOf("Whole Grain Rye (5%)", "Whole Wheat (10%)"),
             yeastType = YeastType.SOURDOUGH_STARTER,
@@ -215,7 +215,7 @@ object PreloadedRecipes {
             title = "Sourdough Dark Rye & Caraway Batard",
             subtitle = "40% Dark Rye • Wild Levain Ferment",
             description = "Traditional European rye sourdough crafted with natural levain, dark rye flour, and whole toasted caraway seeds. Rich earthy aroma and dense, moist crumb.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "Medium Rye Flour (40%)",
             specialtyFlours = listOf("Strong Bread Flour (60%)", "Whole Caraway (2%)"),
             yeastType = YeastType.SOURDOUGH_STARTER,
@@ -254,7 +254,7 @@ object PreloadedRecipes {
             title = "Seeded Artisan Sourdough",
             subtitle = "Toasted Seeds • Nutty Blistered Dome",
             description = "Natural sourdough inoculated with toasted pumpkin seeds, sesame, and golden flax seeds added during the second knead chime.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "Stoneground Bread Flour",
             specialtyFlours = listOf("Toasted Sesame (4%)", "Pumpkin Seeds (5%)", "Flaxseed (3%)"),
             yeastType = YeastType.SOURDOUGH_STARTER,
@@ -292,7 +292,7 @@ object PreloadedRecipes {
             title = "Soft Sourdough Sandwich Loaf",
             subtitle = "65% Hydration • Honey & Milk Enriched",
             description = "All the gut-healthy benefits of wild sourdough fermentation with the soft, sliceable crumb of a traditional sandwich bread. Perfect for daily toast and sandwiches.",
-            category = FlourCategory.SOURDOUGH,
+            category = RecipeCategory.SOURDOUGH,
             primaryFlour = "Unbleached Bread Flour",
             specialtyFlours = listOf("Whole Milk (enriched)", "Clover Honey (3%)"),
             yeastType = YeastType.SOURDOUGH_STARTER,
@@ -335,7 +335,7 @@ object PreloadedRecipes {
             title = "Rustic Spelt & Wildflower Honey",
             subtitle = "100% Ancient Grain Spelt • Nutty Sweet Crumb",
             description = "Ancient spelt grain possesses delicate, soluble gluten that produces a delightfully digestible crumb with toasted sunflower seed additions.",
-            category = FlourCategory.SPELT_ANCIENT,
+            category = RecipeCategory.WHOLE_GRAIN,
             primaryFlour = "Organic Stoneground Spelt Flour",
             specialtyFlours = listOf("White Spelt (50%)", "Whole Spelt (50%)"),
             yeastType = YeastType.ACTIVE_DRY_YEAST,
@@ -374,7 +374,7 @@ object PreloadedRecipes {
             title = "Golden French Brioche",
             subtitle = "Enriched Butter Crumb • Pearl Sugar Crust",
             description = "Rich, cloud-like brioche loaded with egg yolks and chilled butter cubes incorporated gradually at the Knead 2 chime for supreme feather-light flakiness.",
-            category = FlourCategory.BRIOCHE_SWEET,
+            category = RecipeCategory.SWEET_LOAVES,
             primaryFlour = "French T45 or Strong Bread Flour",
             specialtyFlours = listOf("Pastry Flour (15%)"),
             yeastType = YeastType.INSTANT_YEAST,
@@ -414,7 +414,7 @@ object PreloadedRecipes {
             title = "Japanese Hokkaido Milk Bread",
             subtitle = "Tangzhong Roux Method • Cloud-Soft Pull Apart",
             description = "The pinnacle of tender sandwich bread. Uses the Tangzhong cooked flour-water paste method to trap moisture for days of unmatched cloud-like fluffiness.",
-            category = FlourCategory.SPECIALTY,
+            category = RecipeCategory.SWEET_LOAVES,
             primaryFlour = "Japanese or High-Gluten Bread Flour",
             specialtyFlours = listOf("Dry Whole Milk Powder (8%)"),
             yeastType = YeastType.INSTANT_YEAST,

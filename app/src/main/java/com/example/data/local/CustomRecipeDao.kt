@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.example.data.model.RecipeCategory
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -17,6 +18,12 @@ interface CustomRecipeDao {
 
     @Query("SELECT * FROM custom_recipes ORDER BY createdAt DESC")
     fun getAllCustomRecipes(): Flow<List<CustomRecipeEntity>>
+
+    @Query("SELECT * FROM custom_recipes WHERE category = :category ORDER BY createdAt DESC")
+    fun getCustomRecipesByCategory(category: RecipeCategory): Flow<List<CustomRecipeEntity>>
+
+    @Query("SELECT COUNT(*) FROM custom_recipes WHERE category = :category")
+    suspend fun getCustomRecipeCountByCategory(category: RecipeCategory): Int
 
     @Query("""
         SELECT * FROM custom_recipes 
@@ -42,6 +49,9 @@ interface CustomRecipeDao {
 
     @Update
     suspend fun updateCustomRecipe(recipe: CustomRecipeEntity)
+
+    @Query("UPDATE custom_recipes SET photoUri = :photoUri WHERE id = :id")
+    suspend fun updateCustomRecipePhoto(id: String, photoUri: String?)
 
     @Delete
     suspend fun deleteCustomRecipe(recipe: CustomRecipeEntity)

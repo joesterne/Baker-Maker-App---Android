@@ -133,14 +133,82 @@ object BakingConverter {
     fun activeDryToInstant(activeDryGrams: Double): Double = activeDryGrams / 1.25
     fun freshCakeToInstant(freshGrams: Double): Double = freshGrams / 3.0
 
+    const val GRAMS_PER_OUNCE = 28.349523125
+    const val GRAMS_PER_POUND = 453.59237
+    const val ML_PER_FL_OZ = 29.5735295625
+
+    /**
+     * Converts grams to ounces (oz)
+     */
+    fun gramsToOunces(grams: Double): Double {
+        if (grams <= 0.0) return 0.0
+        return grams / GRAMS_PER_OUNCE
+    }
+
+    /**
+     * Converts ounces (oz) to grams
+     */
+    fun ouncesToGrams(ounces: Double): Double {
+        if (ounces <= 0.0) return 0.0
+        return ounces * GRAMS_PER_OUNCE
+    }
+
+    /**
+     * Converts grams to pounds (lb)
+     */
+    fun gramsToPounds(grams: Double): Double {
+        if (grams <= 0.0) return 0.0
+        return grams / GRAMS_PER_POUND
+    }
+
+    /**
+     * Converts pounds (lb) to grams
+     */
+    fun poundsToGrams(pounds: Double): Double {
+        if (pounds <= 0.0) return 0.0
+        return pounds * GRAMS_PER_POUND
+    }
+
+    /**
+     * Converts milliliters (mL) to US fluid ounces (fl oz)
+     */
+    fun mlToFlOz(ml: Double): Double {
+        if (ml <= 0.0) return 0.0
+        return ml / ML_PER_FL_OZ
+    }
+
+    /**
+     * Converts US fluid ounces (fl oz) to milliliters (mL)
+     */
+    fun flOzToMl(flOz: Double): Double {
+        if (flOz <= 0.0) return 0.0
+        return flOz * ML_PER_FL_OZ
+    }
+
+    /**
+     * Scale a recipe amount by a multiplier
+     */
+    fun scaleValue(value: Double, factor: Double): Double {
+        if (value <= 0.0 || factor <= 0.0) return 0.0
+        return value * factor
+    }
+
+    /**
+     * Formats ounces into decimal and fraction string, e.g. "16.0 oz (1 lb)" or "8.5 oz"
+     */
+    fun formatOunces(ounces: Double): String {
+        if (ounces <= 0.0) return "0.0 oz"
+        return String.format(Locale.US, "%.2f oz", ounces)
+    }
+
     /**
      * Format decimal numbers cleanly (e.g. 1 decimal place)
      */
-    fun formatDouble(value: Double): String {
+    fun formatDouble(value: Double, decimals: Int = 1): String {
         return if (value % 1.0 == 0.0) {
             String.format(Locale.US, "%.0f", value)
         } else {
-            String.format(Locale.US, "%.1f", value)
+            String.format(Locale.US, "%.${decimals}f", value)
         }
     }
 }

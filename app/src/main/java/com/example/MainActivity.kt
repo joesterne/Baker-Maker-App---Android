@@ -12,14 +12,18 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Grain
+import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Tune
@@ -33,9 +37,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -53,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.BreadRecipe
+import com.example.ui.screens.BreadMachineCyclesTimerScreen
 import com.example.ui.screens.BreadStageTimerScreen
 import com.example.ui.screens.DashboardScreen
 import com.example.ui.screens.MachineSettingsScreen
@@ -136,13 +143,17 @@ class MainActivity : ComponentActivity() {
                         BackHandler {
                             currentScreen = ScreenState.Tabs
                         }
+                        val currentRecipe = recipes.find { it.id == screen.recipe.id } ?: screen.recipe
                         RecipeDetailScreen(
-                            recipe = screen.recipe,
+                            recipe = currentRecipe,
                             onBack = { currentScreen = ScreenState.Tabs },
                             onLoadAndBake = {
-                                viewModel.loadRecipe(screen.recipe)
+                                viewModel.loadRecipe(currentRecipe)
                                 currentScreen = ScreenState.Tabs
                                 currentTab = AppTab.DASHBOARD
+                            },
+                            onSavePhoto = { newPhotoUri ->
+                                viewModel.updateRecipePhoto(currentRecipe.id, newPhotoUri)
                             }
                         )
                     }
@@ -325,23 +336,81 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                     AppTab.TIMERS -> {
-                                        val stageTimersState by viewModel.stageTimersState.collectAsStateWithLifecycle()
-                                        BreadStageTimerScreen(
-                                            state = stageTimersState,
-                                            onSelectRoutine = { viewModel.selectTimerRoutine(it) },
-                                            onSelectStage = { viewModel.selectStage(it) },
-                                            onStartCountdown = { viewModel.startStageCountdown() },
-                                            onPauseCountdown = { viewModel.pauseStageCountdown() },
-                                            onResumeCountdown = { viewModel.resumeStageCountdown() },
-                                            onResetCountdown = { viewModel.resetCurrentStageCountdown() },
-                                            onAdjustCountdown = { viewModel.adjustCurrentStageCountdown(it) },
-                                            onSetStageDuration = { idx, secs -> viewModel.setStageDuration(idx, secs) },
-                                            onSkipNextStage = { viewModel.skipToNextStageTimer() },
-                                            onPreviousStage = { viewModel.previousStageTimer() },
-                                            onAddCustomStage = { name, cat, secs, tips -> viewModel.addCustomStageTimer(name, cat, secs, tips) },
-                                            onDeleteStage = { viewModel.deleteStageTimer(it) },
-                                            onDismissAlert = { viewModel.dismissStageTimerAlert() }
-                                        )
+                                        var timerSubTab by remember { mutableStateOf(0) }
+                                        Column(modifier = Modifier.fillMaxSize()) {
+                                            PrimaryTabRow(
+                                                selectedTabIndex = timerSubTab,
+                                                containerColor = MaterialTheme.colorScheme.surface,
+                                                contentColor = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .testTag("timers_tab_row")
+                                            ) {
+                                                Tab(
+                                                    selected = timerSubTab == 0,
+                                                    onClick = { timerSubTab = 0 },
+                                                    text = {
+                                                        Text(
+                                                            "Machine Cycles",
+                                                            fontWeight = if (timerSubTab == 0) FontWeight.Bold else FontWeight.Normal
+                                                        )
+                                                    },
+                                                    icon = {
+                                                        Icon(
+                                                            imageVector = Icons.Default.HourglassBottom,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    },
+                                                    modifier = Modifier.testTag("tab_machine_cycles")
+                                                )
+                                                Tab(
+                                                    selected = timerSubTab == 1,
+                                                    onClick = { timerSubTab = 1 },
+                                                    text = {
+                                                        Text(
+                                                            "Stage Workflows",
+                                                            fontWeight = if (timerSubTab == 1) FontWeight.Bold else FontWeight.Normal
+                                                        )
+                                                    },
+                                                    icon = {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Schedule,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    },
+                                                    modifier = Modifier.testTag("tab_stage_workflows")
+                                                )
+                                            }
+
+                                            if (timerSubTab == 0) {
+                                                BreadMachineCyclesTimerScreen(
+                                                    onLoadCycleIntoBaker = { cycle ->
+                                                        viewModel.setZojirushiMenuCourse(cycle.course)
+                                                        currentTab = AppTab.DASHBOARD
+                                                    }
+                                                )
+                                            } else {
+                                                val stageTimersState by viewModel.stageTimersState.collectAsStateWithLifecycle()
+                                                BreadStageTimerScreen(
+                                                    state = stageTimersState,
+                                                    onSelectRoutine = { viewModel.selectTimerRoutine(it) },
+                                                    onSelectStage = { viewModel.selectStage(it) },
+                                                    onStartCountdown = { viewModel.startStageCountdown() },
+                                                    onPauseCountdown = { viewModel.pauseStageCountdown() },
+                                                    onResumeCountdown = { viewModel.resumeStageCountdown() },
+                                                    onResetCountdown = { viewModel.resetCurrentStageCountdown() },
+                                                    onAdjustCountdown = { viewModel.adjustCurrentStageCountdown(it) },
+                                                    onSetStageDuration = { idx, secs -> viewModel.setStageDuration(idx, secs) },
+                                                    onSkipNextStage = { viewModel.skipToNextStageTimer() },
+                                                    onPreviousStage = { viewModel.previousStageTimer() },
+                                                    onAddCustomStage = { name, cat, secs, tips -> viewModel.addCustomStageTimer(name, cat, secs, tips) },
+                                                    onDeleteStage = { viewModel.deleteStageTimer(it) },
+                                                    onDismissAlert = { viewModel.dismissStageTimerAlert() }
+                                                )
+                                            }
+                                        }
                                     }
                                     AppTab.SETTINGS -> {
                                         MachineSettingsScreen(
