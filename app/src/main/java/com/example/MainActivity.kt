@@ -154,7 +154,8 @@ class MainActivity : ComponentActivity() {
                             },
                             onSavePhoto = { newPhotoUri ->
                                 viewModel.updateRecipePhoto(currentRecipe.id, newPhotoUri)
-                            }
+                            },
+                            currentModel = telemetry.model
                         )
                     }
                     is ScreenState.RecipeEditor -> {
@@ -332,7 +333,8 @@ class MainActivity : ComponentActivity() {
                                             onCreateCustomRecipe = {
                                                 currentScreen = ScreenState.RecipeEditor
                                             },
-                                            onDeleteCustomRecipe = { viewModel.deleteCustomRecipe(it) }
+                                            onDeleteCustomRecipe = { viewModel.deleteCustomRecipe(it) },
+                                            currentModel = telemetry.model
                                         )
                                     }
                                     AppTab.TIMERS -> {

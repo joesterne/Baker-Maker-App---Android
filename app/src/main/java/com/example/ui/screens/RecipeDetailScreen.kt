@@ -78,6 +78,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.example.data.model.BakingStage
+import com.example.data.model.BreadMakerModel
 import com.example.data.model.BreadRecipe
 import com.example.data.model.ConverterSettings
 import com.example.ui.components.BakerMeasurementConverterCard
@@ -96,6 +97,7 @@ fun RecipeDetailScreen(
     onBack: () -> Unit,
     onLoadAndBake: () -> Unit,
     onSavePhoto: (String?) -> Unit = {},
+    currentModel: BreadMakerModel = BreadMakerModel.ZOJIRUSHI_BB_PDC20,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -556,7 +558,7 @@ fun RecipeDetailScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Zojirushi BB-PDC20 Course Mapping
+                    // Zojirushi / Bread Machine Course Mapping
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
@@ -565,7 +567,7 @@ fun RecipeDetailScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .clickable {
-                                val manualUrl = "https://manuals.plus/m/4f36891616398983822c8413e12d3c321c3f54eba437d7ba579451d53fbfc9a7"
+                                val manualUrl = currentModel.manualUrl
                                 val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(manualUrl))
                                 context.startActivity(intent)
                             }
@@ -586,15 +588,16 @@ fun RecipeDetailScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
+                                val mappedCourse = currentModel.mapRecommendedCourse(recipe.zojirushiRecommendedCourse)
                                 Column {
                                     Text(
-                                        text = "Zojirushi BB-PDC20 Course #${recipe.zojirushiRecommendedCourse.courseNumber} (${recipe.zojirushiRecommendedCourse.courseName})",
+                                        text = "${if (currentModel.isZojirushi) "Zojirushi ${currentModel.modelCode}" else "Machine"} Course #${mappedCourse.courseNumber} (${mappedCourse.courseName})",
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     Text(
-                                        text = "Official Manual Course Program • Tap to view manual",
+                                        text = "${mappedCourse.description} • Tap to view ${currentModel.shortName} manual",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontSize = 10.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -607,6 +610,34 @@ fun RecipeDetailScreen(
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(14.dp)
                             )
+                        }
+                    }
+
+                    // 1-lb Pan capacity advisory for compact Zojirushi models
+                    if (currentModel.defaultLoafSize == com.example.data.model.LoafSize.ONE_LB && recipe.defaultLoafSize != com.example.data.model.LoafSize.ONE_LB) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Compact ${currentModel.modelCode} Pan: Standard recipe is ${recipe.defaultLoafSize.label}. Use 'Scale & g↔oz' below to scale down to fit ${currentModel.defaultLoafCapacity} (max ${currentModel.maxFlourGrams}g flour).",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
                         }
                     }
                 }

@@ -72,7 +72,7 @@ fun MachineStatusCard(
     onToggleLamp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isZojirushi = telemetry.model == BreadMakerModel.ZOJIRUSHI_BB_PDC20
+    val isZojirushi = telemetry.model.isZojirushi
 
     // Synchronized blade rotation animations
     val infiniteTransition = rememberInfiniteTransition(label = "motor_rot")
@@ -181,7 +181,7 @@ fun MachineStatusCard(
                 }
             }
 
-            // Zojirushi BB-PDC20 Menu Course & Hardware Feature Pill
+            // Zojirushi Menu Course & Hardware Feature Pill
             if (isZojirushi) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(
@@ -209,17 +209,19 @@ fun MachineStatusCard(
                         }
                     }
 
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surface
-                    ) {
-                        Text(
-                            text = "Memory ${telemetry.homemadeMemorySlot}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
+                    if (telemetry.model.hasHomemadeMemory) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Text(
+                                text = "Mem ${telemetry.homemadeMemorySlot}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
 
                     Surface(
@@ -227,7 +229,7 @@ fun MachineStatusCard(
                         color = MaterialTheme.colorScheme.surface
                     ) {
                         Text(
-                            text = "Dual Blades • Twin Heaters",
+                            text = "${if (telemetry.model.bladeCount == 2) "Dual Blades" else "Single Blade"} • ${if (telemetry.model.hasLidHeater) "Twin Heaters" else "Base Element"}",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -300,10 +302,10 @@ fun MachineStatusCard(
                             }
                         }
 
-                        // Motor RPM / Twin Kneading Blades
+                        // Motor RPM / Kneading Blades
                         Column(horizontalAlignment = Alignment.End) {
-                            if (isZojirushi) {
-                                // Zojirushi BB-PDC20 Twin Paddles Status
+                            if (telemetry.model.bladeCount == 2) {
+                                // Zojirushi Dual Blades Status
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
@@ -354,6 +356,12 @@ fun MachineStatusCard(
                                         color = if (telemetry.motorRpm > 0) BreadWarmWheat else Color(0xFF888888)
                                     )
                                 }
+                                Text(
+                                    text = if (telemetry.motorRpm > 0) "Single Blade Kneading" else "Blade Idle",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 10.sp,
+                                    color = if (telemetry.motorRpm > 0) BreadWarmWheat.copy(alpha = 0.8f) else Color(0xFF888888)
+                                )
                             }
 
                             Spacer(modifier = Modifier.height(4.dp))

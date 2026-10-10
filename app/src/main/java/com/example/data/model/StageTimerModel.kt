@@ -175,22 +175,22 @@ object PreloadedTimerRoutines {
 
     val ZOJIRUSHI_WORKFLOW = TimerRoutine(
         id = "zojirushi_routine",
-        title = "Zojirushi BB-PDC20 Machine Workflow",
-        description = "Stage timing corresponding to Zojirushi Virtuoso Plus twin-blade automatic courses.",
+        title = "Zojirushi 2-lb Dual-Blade Routine",
+        description = "Stage timing for Zojirushi 2-lb horizontal dual-paddle models (BB-PDC20, BB-PAC20, BB-CEC20, etc.).",
         stages = listOf(
             BreadStageTimer(
                 id = "zj_preheat",
                 name = "Preheat & Temp Equalize",
                 category = TimerStageCategory.PREHEAT,
                 targetDurationSeconds = 25 * 60,
-                bakerTips = "Sensors bring liquid, flour, and chamber to consistent 75°F before motor engages."
+                bakerTips = "Dual temperature sensors equalize ingredients and chamber to 75°F before motor engages."
             ),
             BreadStageTimer(
                 id = "zj_knead",
                 name = "Twin Blade Kneading",
                 category = TimerStageCategory.KNEADING,
                 targetDurationSeconds = 22 * 60,
-                bakerTips = "Twin clockwise & counter-clockwise blades thoroughly stretch gluten in horizontal pan."
+                bakerTips = "Twin synchronous blades stretch gluten across the 2-lb horizontal loaf pan."
             ),
             BreadStageTimer(
                 id = "zj_rise1",
@@ -204,7 +204,7 @@ object PreloadedTimerRoutines {
                 name = "Paddle Removal & Punch Down",
                 category = TimerStageCategory.BENCH_REST,
                 targetDurationSeconds = 5 * 60,
-                bakerTips = "Beep sounds: open lid and extract both kneading blades with hook to prevent holes in bottom."
+                bakerTips = "Beep sounds: open lid and extract twin kneading paddles with hook."
             ),
             BreadStageTimer(
                 id = "zj_final_rise",
@@ -223,7 +223,64 @@ object PreloadedTimerRoutines {
         )
     )
 
-    val ALL_ROUTINES = listOf(ARTISAN_SOURDOUGH, QUICK_YEAST_BREAD, ZOJIRUSHI_WORKFLOW)
+    val ZOJIRUSHI_COMPACT_WORKFLOW = TimerRoutine(
+        id = "zojirushi_compact_routine",
+        title = "Zojirushi 1-lb Compact Routine",
+        description = "Stage timing for Zojirushi 1-lb compact models (Maestro BB-SSC10, Kobo Kitchen BB-ST10, Mini BB-HAC10 / BB-HE10 / BB-HD10 / BB-HA10).",
+        stages = listOf(
+            BreadStageTimer(
+                id = "zjc_preheat",
+                name = "Preheat & Micro-Equalize",
+                category = TimerStageCategory.PREHEAT,
+                targetDurationSeconds = 20 * 60,
+                bakerTips = "Targeted heating stabilizes 1-lb compact chamber to ideal starting fermentation temperature."
+            ),
+            BreadStageTimer(
+                id = "zjc_knead",
+                name = "Single Blade Centered Knead",
+                category = TimerStageCategory.KNEADING,
+                targetDurationSeconds = 18 * 60,
+                bakerTips = "Single high-torque central paddle develops tight, uniform dough ball in vertical pan."
+            ),
+            BreadStageTimer(
+                id = "zjc_dispense",
+                name = "Auto-Dispenser / Add-in Beep",
+                category = TimerStageCategory.BENCH_REST,
+                targetDurationSeconds = 5 * 60,
+                bakerTips = "Maestro/Kobo dispenser triggers automatically; manual beep on Mini for raisins, nuts, or seeds."
+            ),
+            BreadStageTimer(
+                id = "zjc_bulk_rise",
+                name = "Bulk Rise & Warm Proof",
+                category = TimerStageCategory.BULK_PROOF,
+                targetDurationSeconds = 40 * 60,
+                bakerTips = "Chamber heating maintains consistent 82°F–86°F temperature for yeast activity."
+            ),
+            BreadStageTimer(
+                id = "zjc_paddle_remove",
+                name = "Single Paddle Removal",
+                category = TimerStageCategory.BENCH_REST,
+                targetDurationSeconds = 5 * 60,
+                bakerTips = "Remove central blade before final rise to leave minimal indentation in vertical loaf."
+            ),
+            BreadStageTimer(
+                id = "zjc_final_rise",
+                name = "Vertical Loaf Rise",
+                category = TimerStageCategory.FINAL_PROOF,
+                targetDurationSeconds = 50 * 60,
+                bakerTips = "Loaf rises to top rim of compact nonstick vertical pan."
+            ),
+            BreadStageTimer(
+                id = "zjc_bake",
+                name = "Compact Radiant Bake",
+                category = TimerStageCategory.BAKING,
+                targetDurationSeconds = 45 * 60,
+                bakerTips = "Surround sidewall elements bake golden crumb tailored to 1-lb loaf volume."
+            )
+        )
+    )
+
+    val ALL_ROUTINES = listOf(ARTISAN_SOURDOUGH, QUICK_YEAST_BREAD, ZOJIRUSHI_WORKFLOW, ZOJIRUSHI_COMPACT_WORKFLOW)
 }
 
 data class StageTimersState(

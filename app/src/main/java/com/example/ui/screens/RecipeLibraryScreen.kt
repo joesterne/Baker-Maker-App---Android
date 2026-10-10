@@ -56,6 +56,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.model.BreadMakerModel
 import com.example.data.model.BreadRecipe
 import com.example.data.model.RecipeCategory
 import com.example.ui.theme.BreadCrustGolden
@@ -74,6 +75,7 @@ fun RecipeLibraryScreen(
     onLoadRecipeIntoMachine: (BreadRecipe) -> Unit,
     onCreateCustomRecipe: () -> Unit,
     onDeleteCustomRecipe: ((String) -> Unit)? = null,
+    currentModel: BreadMakerModel = BreadMakerModel.ZOJIRUSHI_BB_PDC20,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -86,14 +88,14 @@ fun RecipeLibraryScreen(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            // Official Zojirushi BB-PDC20 Manual & Recipe Book Banner
+            // Official Zojirushi Model Manual & Guidebook Banner
             val context = androidx.compose.ui.platform.LocalContext.current
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
                     .clickable {
-                        val manualUrl = "https://manuals.plus/m/4f36891616398983822c8413e12d3c321c3f54eba437d7ba579451d53fbfc9a7"
+                        val manualUrl = currentModel.manualUrl
                         val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(manualUrl))
                         context.startActivity(intent)
                     }
@@ -124,13 +126,13 @@ fun RecipeLibraryScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "Zojirushi BB-PDC20 Official Manual",
+                                text = if (currentModel.isZojirushi) "Official ${currentModel.shortName} Manual" else "Official Machine Guidebook",
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Text(
-                                text = "50-Recipe Virtuoso® Plus guidebook included • Tap to view web manual",
+                                text = "${currentModel.menuCourseCount}-Course ${currentModel.modelCode} guidebook • ${currentModel.defaultLoafCapacity} • Tap for manual",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)

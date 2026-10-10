@@ -187,8 +187,9 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
             current.copy(
                 model = model,
                 machineName = model.modelName,
-                connectionType = if (model == BreadMakerModel.ZOJIRUSHI_BB_PDC20) "Bluetooth 5.2 LE (Zojirushi Connect)" else "Bluetooth 5.2 LE",
-                selectedLoafSize = if (model == BreadMakerModel.ZOJIRUSHI_BB_PDC20) LoafSize.TWO_LB else current.selectedLoafSize
+                connectionType = if (model.isZojirushi) "Bluetooth 5.2 LE (Zojirushi Connect)" else "Bluetooth 5.2 LE",
+                selectedLoafSize = model.defaultLoafSize,
+                lidHeaterActive = model.hasLidHeater && current.isCurrentStageBaking
             )
         }
         showFeedback("Bread maker model set to ${model.shortName}")
@@ -714,13 +715,14 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
                 itemsToAdd = itemsForStage
             )
         } else if (stage.type == BakingStageType.PUNCH_DOWN && current.paddleRemovalReminderEnabled) {
-            val isZojirushi = current.model == BreadMakerModel.ZOJIRUSHI_BB_PDC20
+            val isZojirushi = current.model.isZojirushi
+            val hasTwinPaddles = current.model.bladeCount == 2
             val alert = IngredientAlert(
-                title = if (isZojirushi) "Zojirushi BB-PDC20: Remove Twin Paddles" else "Paddle Extraction Reminder",
-                message = if (isZojirushi) {
-                    "Extract both kneading blades (Left & Right paddles) from the horizontal pan before final proof to avoid holes in your 2-lb loaf."
+                title = if (hasTwinPaddles) "${current.model.shortName}: Remove Twin Paddles" else if (isZojirushi) "${current.model.shortName}: Remove Kneading Blade" else "Paddle Extraction Reminder",
+                message = if (hasTwinPaddles) {
+                    "Extract both kneading blades (Left & Right paddles) from the ${current.model.panType} before final proof to avoid holes in your ${current.model.defaultLoafCapacity}."
                 } else {
-                    "Extract the metal kneading paddle now so the loaf bakes without a bottom hole."
+                    "Extract the metal kneading blade from the pan now before final proof so the loaf bakes without a bottom hole."
                 },
                 stageType = stage.type,
                 itemsToAdd = emptyList()
