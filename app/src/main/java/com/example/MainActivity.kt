@@ -134,6 +134,7 @@ class MainActivity : ComponentActivity() {
                 val filteredRecipes by viewModel.filteredRecipes.collectAsStateWithLifecycle()
                 val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
                 val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+                val categoryCounts by viewModel.categoryCounts.collectAsStateWithLifecycle()
 
                 var currentTab by remember { mutableStateOf(AppTab.DASHBOARD) }
                 var currentScreen by remember { mutableStateOf<ScreenState>(ScreenState.Tabs) }
@@ -155,6 +156,7 @@ class MainActivity : ComponentActivity() {
                             onSavePhoto = { newPhotoUri ->
                                 viewModel.updateRecipePhoto(currentRecipe.id, newPhotoUri)
                             },
+                            onToggleFavorite = { viewModel.toggleFavoriteRecipe(it) },
                             currentModel = telemetry.model
                         )
                     }
@@ -321,6 +323,7 @@ class MainActivity : ComponentActivity() {
                                             recipes = filteredRecipes,
                                             searchQuery = searchQuery,
                                             selectedCategory = selectedCategory,
+                                            categoryCounts = categoryCounts,
                                             onSearchChange = { viewModel.onSearchQueryChange(it) },
                                             onCategoryChange = { viewModel.onCategorySelect(it) },
                                             onRecipeClick = { recipe ->
@@ -334,6 +337,7 @@ class MainActivity : ComponentActivity() {
                                                 currentScreen = ScreenState.RecipeEditor
                                             },
                                             onDeleteCustomRecipe = { viewModel.deleteCustomRecipe(it) },
+                                            onToggleFavorite = { viewModel.toggleFavoriteRecipe(it) },
                                             currentModel = telemetry.model
                                         )
                                     }

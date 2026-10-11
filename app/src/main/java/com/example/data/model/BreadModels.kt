@@ -672,6 +672,7 @@ enum class RecipeCategory(
     val iconName: String
 ) {
     ALL("All Recipes", "All recipes in library", "📚", "all"),
+    FAVORITES("Favorites", "Quick access to your most-baked & bookmarked loaves", "⭐", "favorites"),
     SOURDOUGH("Sourdough", "Natural levain & wild fermentation", "🌾", "sourdough"),
     YEAST_BREAD("Yeast Bread", "Classic sandwich, artisan & rustic loaves", "🍞", "yeast_bread"),
     SWEET_LOAVES("Sweet Loaves", "Enriched brioche, milk bread & fruit loaves", "🍯", "sweet_loaves"),
@@ -735,7 +736,9 @@ data class BreadRecipe(
     val bakerNotes: List<String> = emptyList(),
     val isCustom: Boolean = false,
     val zojirushiRecommendedCourse: ZojirushiMenuCourse = ZojirushiMenuCourse.EUROPEAN,
-    val photoUri: String? = null
+    val photoUri: String? = null,
+    val isFavorite: Boolean = false,
+    val bakeCount: Int = 0
 )
 
 data class IngredientAlert(

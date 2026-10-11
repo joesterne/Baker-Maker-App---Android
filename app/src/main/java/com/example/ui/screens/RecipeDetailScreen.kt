@@ -37,7 +37,10 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Scale
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.AlertDialog
@@ -97,6 +100,7 @@ fun RecipeDetailScreen(
     onBack: () -> Unit,
     onLoadAndBake: () -> Unit,
     onSavePhoto: (String?) -> Unit = {},
+    onToggleFavorite: (String) -> Unit = {},
     currentModel: BreadMakerModel = BreadMakerModel.ZOJIRUSHI_BB_PDC20,
     modifier: Modifier = Modifier
 ) {
@@ -190,6 +194,16 @@ fun RecipeDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { onToggleFavorite(recipe.id) },
+                        modifier = Modifier.testTag("appbar_favorite_btn")
+                    ) {
+                        Icon(
+                            imageVector = if (recipe.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = if (recipe.isFavorite) "Remove from favorites" else "Add to favorites",
+                            tint = if (recipe.isFavorite) BreadCrustGolden else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     IconButton(
                         onClick = { launchCamera() },
                         modifier = Modifier.testTag("appbar_camera_btn")
@@ -502,6 +516,67 @@ fun RecipeDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    if (recipe.isFavorite || recipe.bakeCount > 0) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (recipe.isFavorite) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = BreadCrustGolden.copy(alpha = 0.2f),
+                                    border = BorderStroke(1.dp, BreadCrustGolden.copy(alpha = 0.5f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Star,
+                                            contentDescription = null,
+                                            tint = BreadCrustGolden,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "FAVORITE LOAF",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = BreadCrustGolden
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (recipe.bakeCount > 0) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Whatshot,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "BAKED ${recipe.bakeCount} TIMES",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(14.dp))
 

@@ -41,8 +41,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.model.BreadRecipe
@@ -134,13 +135,18 @@ fun DashboardScreen(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
-                            Text(
-                                text = activeRecipe?.title ?: "Select Recipe",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (activeRecipe?.isFavorite == true) {
+                                    Text("⭐ ", fontSize = 12.sp)
+                                }
+                                Text(
+                                    text = activeRecipe?.title ?: "Select Recipe",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(
@@ -155,12 +161,20 @@ fun DashboardScreen(
                     expanded = showRecipeDropdown,
                     onDismissRequest = { showRecipeDropdown = false }
                 ) {
-                    recipes.take(6).forEach { recipe ->
+                    recipes.take(8).forEach { recipe ->
                         DropdownMenuItem(
                             text = {
                                 Column {
-                                    Text(recipe.title, fontWeight = FontWeight.Bold)
-                                    Text("${recipe.category.label} • ${recipe.hydrationPercent}% hydration", style = MaterialTheme.typography.bodySmall)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (recipe.isFavorite) {
+                                            Text("⭐ ", fontSize = 11.sp)
+                                        }
+                                        Text(recipe.title, fontWeight = FontWeight.Bold)
+                                    }
+                                    Text(
+                                        "${recipe.category.label}${if (recipe.bakeCount > 0) " • Baked ${recipe.bakeCount}x" else ""} • ${recipe.hydrationPercent}% hydration",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
                                 }
                             },
                             onClick = {

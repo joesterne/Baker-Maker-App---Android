@@ -72,7 +72,7 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
 
     init {
         val db = AppDatabase.getDatabase(application)
-        repository = RecipeRepository(db.recipeDao(), db.customRecipeDao())
+        repository = RecipeRepository(db.recipeDao(), db.customRecipeDao(), db.favoriteRecipeDao())
 
         viewModelScope.launch {
             repository.ensureSeeded()
@@ -126,16 +126,28 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
         _searchQuery,
         _selectedCategory
     ) { all, query, category ->
-        all.filter { recipe ->
-            val matchesCategory = (category == RecipeCategory.ALL) ||
-                    (category == RecipeCategory.CUSTOM && recipe.isCustom) ||
-                    (recipe.category == category)
+        val filtered = all.filter { recipe ->
+            val matchesCategory = when (category) {
+                RecipeCategory.ALL -> true
+                RecipeCategory.FAVORITES -> recipe.isFavorite || recipe.bakeCount > 0
+                RecipeCategory.CUSTOM -> recipe.isCustom
+                else -> recipe.category == category
+            }
             val matchesQuery = query.isBlank() ||
                     recipe.title.contains(query, ignoreCase = true) ||
                     recipe.primaryFlour.contains(query, ignoreCase = true) ||
                     recipe.specialtyFlours.any { it.contains(query, ignoreCase = true) } ||
                     recipe.description.contains(query, ignoreCase = true)
             matchesCategory && matchesQuery
+        }
+        if (category == RecipeCategory.FAVORITES) {
+            filtered.sortedWith(
+                compareByDescending<BreadRecipe> { it.bakeCount }
+                    .thenByDescending { it.isFavorite }
+                    .thenBy { it.title }
+            )
+        } else {
+            filtered
         }
     }.stateIn(
         scope = viewModelScope,
@@ -147,6 +159,7 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
     val categoryCounts: StateFlow<Map<RecipeCategory, Int>> = recipes.map { all ->
         val counts = mutableMapOf<RecipeCategory, Int>()
         counts[RecipeCategory.ALL] = all.size
+        counts[RecipeCategory.FAVORITES] = all.count { it.isFavorite || it.bakeCount > 0 }
         counts[RecipeCategory.CUSTOM] = all.count { it.isCustom }
         RecipeCategory.userSelectable.forEach { cat ->
             counts[cat] = all.count { it.category == cat }
@@ -374,6 +387,7 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
 
         _telemetry.update { it.copy(state = MachineState.RUNNING) }
         startTicker()
+        current.activeRecipe?.let { recordRecipeBake(it.id) }
         showFeedback("Baking cycle started: ${current.activeRecipe?.title ?: "Program"}")
         checkForStageAlert(current.currentStageIndex, isStageStart = true)
     }
@@ -803,6 +817,28 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
                 }
             }
             showFeedback(if (photoUri != null) "Saved loaf photo to recipe" else "Removed loaf photo")
+        }
+    }
+
+    fun toggleFavoriteRecipe(recipeId: String) {
+        viewModelScope.launch {
+            val allList = recipes.value
+            val target = allList.find { it.id == recipeId }
+                ?: sourdoughRecipes.value.find { it.id == recipeId }
+                ?: customRecipes.value.find { it.id == recipeId }
+            val currentFav = target?.isFavorite ?: false
+            repository.toggleFavorite(recipeId, currentFav)
+            val updatedStatus = !currentFav
+            val name = target?.title ?: "Recipe"
+            showFeedback(
+                if (updatedStatus) "⭐ Added \"$name\" to Favorites" else "Removed \"$name\" from Favorites"
+            )
+        }
+    }
+
+    fun recordRecipeBake(recipeId: String) {
+        viewModelScope.launch {
+            repository.recordBake(recipeId)
         }
     }
 

@@ -56,6 +56,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material3.Button
+import androidx.compose.ui.text.style.TextAlign
 import com.example.data.model.BreadMakerModel
 import com.example.data.model.BreadRecipe
 import com.example.data.model.RecipeCategory
@@ -75,6 +81,7 @@ fun RecipeLibraryScreen(
     onLoadRecipeIntoMachine: (BreadRecipe) -> Unit,
     onCreateCustomRecipe: () -> Unit,
     onDeleteCustomRecipe: ((String) -> Unit)? = null,
+    onToggleFavorite: (String) -> Unit = {},
     currentModel: BreadMakerModel = BreadMakerModel.ZOJIRUSHI_BB_PDC20,
     modifier: Modifier = Modifier
 ) {
@@ -287,26 +294,45 @@ fun RecipeLibraryScreen(
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.Grain,
+                            imageVector = if (selectedCategory == RecipeCategory.FAVORITES) Icons.Default.Star else Icons.Default.Grain,
                             contentDescription = "Empty",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(48.dp)
+                            tint = if (selectedCategory == RecipeCategory.FAVORITES) BreadCrustGolden else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(52.dp)
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
                         Text(
-                            text = "No bread recipes found",
+                            text = if (selectedCategory == RecipeCategory.FAVORITES)
+                                "No Favorite Recipes Yet"
+                            else
+                                "No bread recipes found",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Try clearing the search or category filter",
-                            style = MaterialTheme.typography.bodySmall,
+                            text = if (selectedCategory == RecipeCategory.FAVORITES)
+                                "Tap the ⭐ star icon on any recipe card or detail page to pin your favorite and most-baked loaves here for instant access."
+                            else
+                                "Try clearing the search or selecting another category filter",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        if (selectedCategory == RecipeCategory.FAVORITES) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { onCategoryChange(RecipeCategory.ALL) },
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text("Browse All Recipes")
+                            }
+                        }
                     }
                 }
             } else {
@@ -320,6 +346,7 @@ fun RecipeLibraryScreen(
                             recipe = recipe,
                             onClick = { onRecipeClick(recipe) },
                             onLoad = { onLoadRecipeIntoMachine(recipe) },
+                            onToggleFavorite = { onToggleFavorite(recipe.id) },
                             onDelete = if (recipe.isCustom && onDeleteCustomRecipe != null) {
                                 { onDeleteCustomRecipe(recipe.id) }
                             } else null
@@ -360,6 +387,7 @@ private fun RecipeCatalogCard(
     recipe: BreadRecipe,
     onClick: () -> Unit,
     onLoad: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
     Card(
@@ -447,27 +475,45 @@ private fun RecipeCatalogCard(
                     }
                 }
 
-                // Hydration % Pill
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = ProofingBlue.copy(alpha = 0.12f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Hydration % Pill
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = ProofingBlue.copy(alpha = 0.12f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.WaterDrop,
+                                contentDescription = "Hydration",
+                                tint = ProofingBlue,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${recipe.hydrationPercent}%",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = ProofingBlue
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    IconButton(
+                        onClick = onToggleFavorite,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("favorite_toggle_${recipe.id}")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.WaterDrop,
-                            contentDescription = "Hydration",
-                            tint = ProofingBlue,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "${recipe.hydrationPercent}% Hydration",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = ProofingBlue
+                            imageVector = if (recipe.isFavorite) Icons.Filled.Star else Icons.Filled.StarBorder,
+                            contentDescription = if (recipe.isFavorite) "Favorited" else "Add to favorites",
+                            tint = if (recipe.isFavorite) BreadCrustGolden else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -484,12 +530,65 @@ private fun RecipeCatalogCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Flour & Yeast Badges & Stages Info
+            // Flour & Yeast Badges & Stages Info + Favorite & Bake Badges
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (recipe.isFavorite) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = BreadCrustGolden.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, BreadCrustGolden.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Star,
+                                contentDescription = null,
+                                tint = BreadCrustGolden,
+                                modifier = Modifier.size(11.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Favorite",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = BreadCrustGolden
+                            )
+                        }
+                    }
+                }
+
+                if (recipe.bakeCount > 0) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Whatshot,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(11.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Baked ${recipe.bakeCount}x",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
                 Surface(
                     shape = RoundedCornerShape(6.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant
