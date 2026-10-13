@@ -1,70 +1,79 @@
 # CrustCraft 🍞🥖
 
-**CrustCraft** is an artisan Android companion app engineered for automatic bread makers—especially **Zojirushi Home Bakery** models (Virtuoso® Plus, Virtuoso®, Supreme, Maestro, Mini, and universal machines)—as well as sourdough, specialty flour, and custom artisanal bread enthusiasts.
+**CrustCraft** is an artisan Android companion app engineered for automatic bread makers—especially **Zojirushi Home Bakery** models (Virtuoso® Plus, Virtuoso®, Supreme, Maestro, Mini, and universal smart machines)—as well as sourdough, specialty flour, and custom artisanal bread enthusiasts.
 
-CrustCraft pairs precision stage countdown telemetry, Baker's Percentage hydration calculators, persistent Room database recipe management, and an interactive **multimodal AI Bread Doctor powered by Gemini 3.5 Flash** for text and photo diagnostics with complete offline operation.
+CrustCraft pairs precision stage countdown telemetry, Baker's Percentage hydration calculators, persistent Room database recipe management, and an interactive **multimodal AI Bread Doctor powered by Gemini 3.5 Flash** for text and picture diagnostics with complete offline operation.
 
 ---
 
 ## ⚡ Offline Mode & Local Storage Architecture
 
-CrustCraft is designed **offline-first**. It works seamlessly with zero internet connection:
+CrustCraft is built **offline-first**. Every core baking capability, formula calculation, and diagnostic evaluation operates completely without an internet connection:
 
 ### 1. 🗄️ On-Device Room Database Persistence
-- **Zero Cloud Dependency for Core Baking:** All standard artisanal recipes, custom user formulas, favorite states, and bake counts are stored in a local SQLite database via Android Room (`crustcraft_database`).
-- **Tables:**
-  - `recipes`: Preloaded sourdough, milk bread, and artisan formulas seeded at first launch.
-  - `custom_recipes`: User-authored recipes with custom ingredient percentages, hydration, and baker's notes.
-  - `favorite_recipes`: Persistent favorite bookmarks and lifetime bake counts (`bakeCount`).
-- **Reactive Data Layer:** Repositories emit Kotlin Coroutine `Flow` streams from Room DAOs (`RecipeDao`, `CustomRecipeDao`, `FavoriteRecipeDao`), keeping the UI reactive with zero latency.
+- **Zero Cloud Dependency for Core Baking:** All artisanal recipes, custom user-created recipes, favorite states, and lifetime bake logs are stored locally using SQLite via Android Room (`crustcraft_database`, schema version 6).
+- **Persistent Tables:**
+  - `recipes`: Preloaded sourdough, milk bread, and artisan formulas seeded automatically on initial launch.
+  - `custom_recipes`: User-authored recipes with custom ingredient weights, hydration percentages, program cycles, and baker notes.
+  - `favorite_recipes`: Persistent favorite bookmarks and lifetime bake counts (`bakeCount`) with timestamps of the last bake.
+- **Reactive Data Layer:** Repositories emit Kotlin Coroutine `Flow` streams directly from Room DAOs (`RecipeDao`, `CustomRecipeDao`, `FavoriteRecipeDao`), ensuring UI changes update reactively with zero lag.
 
-### 2. 📡 Intelligent Offline Diagnostic Fallback
-- **Dual-Engine Loaf Doctor:**
-  - **Online Mode:** Calls Gemini 3.5 Flash via REST for deep multimodal computer-vision diagnosis of loaf pictures and natural language consultation.
-  - **Offline Mode:** If network connectivity is lost, airplane mode is on, or no API key is provided, the Loaf Doctor automatically falls back to CrustCraft's embedded local knowledge base (`BreadTroubleshootingKnowledgeBase`).
-- **Local Diagnostic Knowledge Base:**
-  - Contains 12+ preloaded, scientifically verified bread machine & sourdough failure modes (*sunken/collapsed tops, dense/gummy crumbs, flat bricks, mushroom pan overflow, pale or thick crusts, stuck paddles, large holes under crust, premature sourness*).
-  - Delivers instant root cause analysis, actionable recipe fixes, and machine tuning without making any network requests.
-  - Accessible either via the natural language chat input or the instant diagnosis symptom chip carousel.
+### 2. 📡 Intelligent Dual-Engine Diagnostic Fallback
+- **Online Mode:** When connected to the internet and configured with a Gemini API key, the Loaf Doctor invokes Google's `gemini-3.5-flash` model via Retrofit for deep multimodal computer-vision diagnosis of loaf pictures and interactive multi-turn troubleshooting conversations.
+- **Offline Mode:** If network connectivity is lost, airplane mode is active, or an API key is not present, the Loaf Doctor automatically falls back to CrustCraft's embedded local knowledge base (`BreadTroubleshootingKnowledgeBase`).
+- **Preloaded Local Diagnostic Knowledge Base:**
+  - Contains 12+ scientifically verified bread machine and sourdough failure modes:
+    - *Sunken / Collapsed Crater Top* (excess hydration, over-proofing, over-yeasting)
+    - *Dense, Heavy, or Gummy Crumb* (under-hydration, dead yeast, salt excess)
+    - *Short, Flat Brick Loaf* (yeast forgotten or scalded by warm water, wrong flour)
+    - *Mushroom Top / Pan Overflow* (excess yeast/sugar, dough touching lid heater)
+    - *Pale or Leathery Top Crust* (low sugar, lack of upper heating element, under-baked)
+    - *Torn Bottom / Stuck Knead Paddle* (paddle left during final proof/bake)
+    - *Flying Crust / Cavities Under Crust* (steam trapped under rapid crust set)
+    - *Premature Sourness or Off-Flavors* (extended warm fermentation)
+  - Delivers instant root cause analysis, actionable recipe adjustments, and machine tuning without making any network requests.
+  - Accessible via both the freeform natural language prompt area and the instant symptom chip carousel.
 
 ### 3. 📸 Private Internal Image Storage
-- Loaf photos captured via camera or selected from gallery are copied to app-internal private storage (`context.filesDir/loaf_photos` and `context.filesDir/chat_diagnostics`) with secure `FileProvider` URIs.
-- Photos persist across app restarts and remain strictly private on the user's device.
+- Photos of loaves captured with the camera or selected from the device photo picker are copied directly into app-internal private storage (`context.filesDir/loaf_photos` and `context.filesDir/chat_diagnostics`) using secure `FileProvider` content URIs.
+- Photos persist across device restarts and remain strictly private on the user's device.
 
 ### 4. ⏱️ 100% Local Timers & Hardware Emulation
-- Stage countdown timers, dispenser audio/haptic chimes, temperature conversions, and simulation engines run entirely in-process using Android coroutines and standard system services.
+- Stage countdown timers, dispenser audio/haptic chimes, temperature conversions, and simulation engines run entirely in-process using Android coroutines and system vibrator/notification services.
 
 ---
 
 ## ✨ Key Features
 
-### 1. 🤖 AI Loaf Doctor & Diagnostic Chatbot (Gemini 3.5 Flash + Offline KB)
-- **Multimodal Analysis:** Ask questions or attach photos of your baked bread (crust, crumb, or loaf cross-section) via camera or gallery.
-- **Master Baker Persona:** Embedded system instructions analyze blister patterns, crumb density, rise height, and paddle tear marks.
-- **Scientific Diagnoses & Corrective Steps:** Explains root causes (hydration imbalance, over/under proofing, yeast activity, water temperature, crust presets) and provides 2–3 actionable steps for the next bake.
-- **Offline Fallback Engine:** Automatic switch to on-device diagnostic heuristics when disconnected.
+### 1. 🤖 AI Loaf Doctor & Diagnostic Chatbot (Gemini 3.5 Flash + Local KB)
+- **Multimodal Text & Picture Diagnostics:** Ask questions or attach photos of your finished bread (crust color, crumb structure, loaf cross-section, or oven rise) directly from your camera or photo gallery.
+- **Master Baker Persona:** Embedded system instructions instruct the AI to analyze crumb pore distribution, blister patterns, gelatinization, and paddle tear marks.
+- **Root Cause & Concrete Remedies:** Delivers scientifically grounded explanations (hydration ratios, water temperature, yeast viability, proofing times, crust shades) and provides 2–3 immediate adjustments for your next bake.
+- **Troubleshooting Prompt Area:** Accessible across the app:
+  - From the main **Baker Dashboard** via the `Doctor` quick tool button in a dedicated bottom sheet (`TroubleshootingPromptSheet`).
+  - Embedded in every **Recipe Detail Screen** (`LoafTroubleshootingSection`) to diagnose specific recipes.
 
 ### 2. 🎛️ Real-Time Baker Dashboard & Machine Telemetry
 - **Hardware Telemetry Simulation:** Live motor RPM, chamber temperature (°F), heating element status, lid sensor, interior lamp, and pan lock.
 - **Stage Progress Stepper:** Track cycles through *Preheat & Equalize*, *Hydration & Knead*, *Rest & Autolyse*, *Gluten Development*, *Bulk Fermentation*, *Punch Down & Paddle Extraction*, *Proofing 1–3*, *Artisan Bake*, and *Keep Warm*.
-- **Live Push Ingredient Alerts:** Timed prompts and chime notifications for dispenser add-ins (raisins, nuts, seeds, cheese) and paddle removal.
-- **Simulation Speed Control:** 1x real-time up to 60x simulation for rapid recipe testing.
+- **Ingredient Dispenser Alerts:** Timed prompts and chime notifications for dispenser add-ins (raisins, nuts, seeds, cheese) and paddle extraction before final proofing.
+- **Simulation Speed Control:** 1x real-time up to 60x simulation for rapid recipe and workflow testing.
 
 ### 3. ⭐ Artisanal Recipe Library & Persistent Favorites
-- **Persistent Storage:** Backed by Android **Room Database** (`AppDatabase`, `RecipeDao`, `FavoriteRecipeDao`).
-- **Persistent 'Favorites' Category:** Filter recipes by "Favorites" tab with live count badges and sorting prioritized by your most-baked loaves (`bakeCount`).
-- **Comprehensive Catalog:** Preloaded sourdoughs (San Francisco Sourdough, Rustic Boule, Rye, Whole Grain), milk breads (Hokkaido Milk Bread), brioche, pizza doughs, and custom user-authored recipes.
-- **Custom Recipe Editor:** Create custom formulas with custom hydration, flour blends, baking stages, and baker's notes.
-- **Photo Diary:** Snap and attach photos of your finished loaves to individual recipe entries.
+- **Persistent Room Storage:** Backed by Android Room Database (`AppDatabase`, `RecipeDao`, `CustomRecipeDao`, `FavoriteRecipeDao`).
+- **⭐ Favorites Filter Tab:** Top-level category filter displaying live count badges of favorited recipes and prioritizing your most-baked loaves (`bakeCount`).
+- **Comprehensive Catalog:** Preloaded sourdoughs (San Francisco Sourdough, Rustic Boule, Rye, Whole Grain), milk breads (Hokkaido Milk Bread), brioche, pizza doughs, official Zojirushi manual recipes, and custom user formulas.
+- **Custom Recipe Editor:** Create custom formulas with custom hydration percentages, flour blends, baking stages, and baker notes.
+- **Recipe Photo Diary:** Snap and attach photos of your finished loaves directly to individual recipe records.
 
 ### 4. ⚖️ Baker's Hydration & Measurement Tools
-- **Hydration Calculator:** Real-time baker's percentage calculations based on total flour weight.
+- **Hydration Calculator:** Instant baker's percentage calculations based on total flour weight.
 - **Scale & Unit Converter:** Convert fluid ounces, grams, milliliters, and cups with liquid density adjustment (water, milk, buttermilk, honey, oil).
-- **Loaf Rescaling:** Scale recipes between 1.0 lb, 1.5 lb, and 2.0 lb capacities.
+- **Loaf Capacity Scaling:** Scale recipes dynamically between 1.0 lb, 1.5 lb, and 2.0 lb pan capacities.
 
 ### 5. ⏱️ Bread Machine Cycles & Stage Workflows
 - **Zojirushi Menu Program Profiles:** Exact cycle timings for White, Whole Wheat, European, Sourdough Starter, Multigrain, Gluten-Free, Cake, and Dough courses.
-- **Standalone Stage Countdown Timers:** Dedicated timers for manual sourdough fermentations, fold intervals, and countertop proofing.
+- **Standalone Stage Countdown Timers:** Dedicated timers for manual sourdough fermentations, stretch-and-fold intervals, and countertop proofing.
 
 ### 6. ⚙️ Machine Settings & Model Support
 Dedicated presets, pan capacities, and manual links for:
@@ -82,9 +91,9 @@ Dedicated presets, pan capacities, and manual links for:
 
 - **Language:** Kotlin 2.2.10
 - **UI Framework:** Jetpack Compose with Material Design 3 (M3)
-- **Architecture:** MVVM (Model-View-ViewModel) + Clean Data Layer
+- **Architecture:** MVVM (Model-View-ViewModel) + Repository Pattern + Clean Data Layer
 - **Persistence (Local Storage):** Android Room 2.7.0 with SQLite & Kotlin Coroutines Flow
-- **AI / Multimodal:** Google Gemini API (`gemini-3.5-flash`) via Retrofit & OkHttp with local fallback
+- **AI & Computer Vision:** Google Gemini API (`gemini-3.5-flash`) via Retrofit & OkHttp with local fallback
 - **JSON Serialization:** Moshi with Kotlin Reflection
 - **Image Loading:** Coil Compose 2.7.0
 - **Secrets Management:** Secrets Gradle Plugin reading from `.env` / `.env.example`
@@ -96,43 +105,54 @@ Dedicated presets, pan capacities, and manual links for:
 
 ```text
 app/src/main/java/com/example/
-├── MainActivity.kt                     # Single Activity with Scaffold and tab navigation
+├── MainActivity.kt                         # Single Activity with Scaffold and tab navigation
 ├── data/
 │   ├── ai/
-│   │   ├── BakingChatBotRepository.kt  # Multi-turn chat repository, offline fallback & image encoding
-│   │   ├── GeminiApiService.kt         # Retrofit service interface & client
-│   │   └── GeminiModels.kt             # Gemini request/response and ChatMessage models
+│   │   ├── BakingChatBotRepository.kt      # Multi-turn chat repository, offline fallback & image encoding
+│   │   ├── GeminiApiService.kt             # Retrofit service interface & client
+│   │   └── GeminiModels.kt                 # Gemini request/response and ChatMessage models
 │   ├── local/
-│   │   ├── AppDatabase.kt              # Room Database definition & initial seeders
-│   │   ├── Converters.kt               # Room type converters (Moshi JSON)
-│   │   ├── FavoriteRecipeDao.kt        # Room DAO for persistent favorites & bake counts
-│   │   ├── FavoriteRecipeEntity.kt     # Room entity for favorite records
-│   │   ├── RecipeDao.kt                # Room DAO for standard recipes
-│   │   └── RecipeEntity.kt             # Room entity for recipes
+│   │   ├── AppDatabase.kt                  # Room Database definition & initial seeders
+│   │   ├── Converters.kt                   # Room type converters (Moshi JSON)
+│   │   ├── CustomRecipeDao.kt              # Room DAO for custom user-authored recipes
+│   │   ├── CustomRecipeEntity.kt           # Room entity for custom recipes
+│   │   ├── FavoriteRecipeDao.kt            # Room DAO for persistent favorites & bake counts
+│   │   ├── FavoriteRecipeEntity.kt         # Room entity for favorite records
+│   │   ├── PreloadedCustomRecipes.kt       # Starter custom recipes seeded into Room
+│   │   ├── PreloadedRecipes.kt             # Preloaded artisanal and sourdough recipes
+│   │   ├── RecipeDao.kt                    # Room DAO for standard recipes
+│   │   ├── RecipeEntity.kt                 # Room entity for recipes
+│   │   └── ZojirushiManualRecipes.kt       # Official machine handbook recipes
 │   ├── model/
-│   │   ├── BreadModels.kt              # Domain models (BreadRecipe, BreadMakerModel, etc.)
-│   │   ├── PreloadedRecipes.kt         # Preloaded artisanal and sourdough recipes
-│   │   ├── StageTimerModel.kt          # Stage countdown workflows and model timing
-│   │   └── TroubleshootingModels.kt    # Symptom knowledge base & diagnostic rules (offline KB)
+│   │   ├── BreadModels.kt                  # Domain models (BreadRecipe, BreadMakerModel, etc.)
+│   │   ├── StageTimerModel.kt              # Stage countdown workflows and model timing
+│   │   └── TroubleshootingModels.kt        # Symptom knowledge base & diagnostic rules (offline KB)
 │   └── repository/
-│       └── RecipeRepository.kt         # Unified data repository with Flow combines
+│       └── RecipeRepository.kt             # Unified data repository with Flow combines
 ├── ui/
 │   ├── components/
-│   │   ├── BakingChatBotSection.kt     # Multi-turn Gemini AI diagnostic chat UI with offline indicator
-│   │   ├── LoafTroubleshootingSection.kt # "Loaf Doctor" diagnosis & prompt view
-│   │   ├── MachineStatusCard.kt        # Hardware telemetry dashboard widget
-│   │   ├── SourdoughCountdownTimerCard.kt # Precision countdown stepper
-│   │   └── ...                         # Converters, calculators, steppers
+│   │   ├── BakerMeasurementConverter.kt   # Volume-to-mass and density converter card
+│   │   ├── BakingChatBotSection.kt         # Multi-turn Gemini AI diagnostic chat UI with offline indicator
+│   │   ├── BakingUnitScaleConverter.kt     # Metric / Imperial baking unit scaler
+│   │   ├── HydrationCalculatorSheet.kt     # Baker's percentage hydration modal sheet
+│   │   ├── IngredientAlertBanner.kt        # Timed add-in banner notification
+│   │   ├── LoafTroubleshootingSection.kt   # "Loaf Doctor" diagnosis & prompt view
+│   │   ├── MachineStatusCard.kt            # Hardware telemetry dashboard widget
+│   │   ├── SourdoughCountdownTimerCard.kt  # Precision countdown stepper
+│   │   ├── StageProgressStepper.kt         # Visual bread machine cycle progress stepper
+│   │   └── TemperatureAdjustmentPanel.kt   # Water temperature & ambient climate adjuster
 │   ├── screens/
-│   │   ├── DashboardScreen.kt          # Primary baker control dashboard
-│   │   ├── RecipeLibraryScreen.kt      # Catalog with search & category filters
-│   │   ├── RecipeDetailScreen.kt       # Recipe view, photos, scaling & diagnosis
-│   │   ├── BreadStageTimerScreen.kt    # Countdown timer routines
-│   │   ├── SourdoughRecipesScreen.kt   # Dedicated Sourdough tab
-│   │   └── MachineSettingsScreen.kt    # Model selection, offline storage status & machine preferences
-│   └── theme/                          # M3 color scheme, typography & styles
+│   │   ├── BreadMachineCyclesTimerScreen.kt# Official course timings & countdowns
+│   │   ├── BreadStageTimerScreen.kt        # Standalone artisanal stage timers
+│   │   ├── DashboardScreen.kt              # Primary baker control dashboard with quick tools
+│   │   ├── MachineSettingsScreen.kt        # Machine model selector & offline storage manager
+│   │   ├── RecipeDetailScreen.kt           # Recipe view, photos, scaling & embedded diagnosis
+│   │   ├── RecipeEditorScreen.kt           # Custom recipe creator and editor
+│   │   ├── RecipeLibraryScreen.kt          # Catalog with search & category filters (⭐ Favorites)
+│   │   └── SourdoughRecipesScreen.kt       # Dedicated Sourdough tab & starter maintenance
+│   └── theme/                              # M3 color scheme, typography, shapes & palette
 └── viewmodel/
-    └── BreadMakerViewModel.kt          # Central state orchestrator & coroutine scopes
+    └── BreadMakerViewModel.kt              # Central state orchestrator & coroutine scopes
 ```
 
 ---
@@ -145,31 +165,31 @@ app/src/main/java/com/example/
 - JDK 17 / 21
 
 ### Offline Readiness (No Setup Required)
-- **CrustCraft works right out of the box without any network configuration or API keys.** All database records, timers, formulas, and local troubleshooting diagnoses are preloaded locally.
+- **CrustCraft works completely out of the box without network access or API credentials.** All database records, timers, formulas, and local troubleshooting diagnoses are preloaded and persistent on-device.
 
 ### (Optional) Configure Gemini API Key for Live Multimodal Chat
-To enhance the Loaf Doctor with live Gemini 3.5 Flash multimodal vision analysis:
+To enable real-time Gemini 3.5 Flash computer-vision analysis of bread photos:
 1. Obtain an API key from [Google AI Studio](https://aistudio.google.com/).
 2. In AI Studio Build, enter your key in the **Secrets panel** under `GEMINI_API_KEY`.
-3. Alternatively, for local builds, create a `.env` file in the root project directory:
+3. For local workstation builds, add your key to `.env` in the root project directory:
    ```properties
    GEMINI_API_KEY=your_gemini_api_key_here
    ```
 
 ### Build & Run
-Run the standard Gradle tasks:
 ```bash
-# Compile and build the debug APK
+# Compile and build debug APK
 gradle assembleDebug
 
-# Run unit and Robolectric tests
+# Run unit tests and Room validation
 gradle :app:testDebugUnitTest
 ```
 
 ---
 
-## 🔒 Permissions
-- `android.permission.INTERNET`: Used for Gemini AI diagnostic API calls when online (gracefully skipped when offline).
+## 🔒 Permissions & Security
+- `android.permission.INTERNET`: Used exclusively for multimodal Gemini API requests when online (gracefully bypassed when offline).
 - `android.permission.CAMERA`: Used for capturing real-time photos of bread crust and crumb for diagnosis and recipe photo diaries.
 - `android.permission.POST_NOTIFICATIONS`: Triggers dispenser alert notifications and cycle completion alerts.
 - `android.permission.VIBRATE`: Provides haptic cues when ingredient dispenser alerts sound.
+- **Privacy Assurance:** Photos captured or selected remain on-device in app-private storage (`filesDir`). No telemetry or user recipe data is uploaded to external servers.
