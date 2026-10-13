@@ -219,9 +219,23 @@ fun BakingChatBotSection(
                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                 )
                             }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer
+                            ) {
+                                Text(
+                                    text = "⚡ Offline-Ready",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                         Text(
-                            text = "Multimodal text & photo loaf diagnostics",
+                            text = "Multimodal text & photo loaf diagnostics (with offline fallback)",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

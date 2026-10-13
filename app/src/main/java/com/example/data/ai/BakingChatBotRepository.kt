@@ -180,14 +180,51 @@ class BakingChatBotRepository(
                 )
             }
         } catch (e: Exception) {
-            val errorText = "Diagnostic Error: ${e.localizedMessage ?: "Unable to connect to Gemini AI."}\n\nCheck your connection or try again."
+            // Intelligent Offline Mode Fallback:
+            // When offline, network is unavailable, or API key is not present, use the built-in
+            // local bread troubleshooting knowledge base to deliver instant diagnostics.
+            val offlineMatches = com.example.data.model.BreadTroubleshootingKnowledgeBase.diagnose(trimmed)
+            val topMatch = offlineMatches.firstOrNull()
+
+            val offlineDiagnosticText = if (topMatch != null) {
+                """
+                📡 [Offline Mode Active — Local Storage Diagnosis]
+                
+                I'm operating in offline mode using CrustCraft's local diagnostic knowledge base.
+                
+                ${topMatch.iconEmoji} Detected Symptom: **${topMatch.symptom}**
+                
+                🔬 **Probable Cause:**
+                ${topMatch.primaryCause}
+                
+                🛠️ **Recommended Fixes for Next Bake:**
+                ${topMatch.immediateFix}
+                
+                ⚙️ **Machine Tuning:**
+                ${topMatch.machineTuning}
+                
+                💡 *Tip: ${topMatch.tipQuote}*
+                """.trimIndent()
+            } else {
+                """
+                📡 [Offline Mode Active — Local Storage]
+                
+                I could not reach Gemini AI (${e.localizedMessage ?: "No network connection"}).
+                
+                In offline mode, you can still:
+                • Use the "Instant Diagnosis" tab to browse 12+ preloaded symptom solutions.
+                • Search any symptom (e.g., "sunken top", "pale crust", "gummy crumb", "paddle stuck").
+                • Access all recipes, stage timers, hydration calculators, and favorites saved locally in Room!
+                """.trimIndent()
+            }
+
             _uiState.update { state ->
                 state.copy(
                     isLoading = false,
                     messages = state.messages + ChatMessage(
                         isUser = false,
-                        text = errorText,
-                        isError = true
+                        text = offlineDiagnosticText,
+                        isError = false
                     )
                 )
             }

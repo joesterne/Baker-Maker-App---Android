@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MenuBook
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Button
@@ -622,6 +624,74 @@ fun MachineSettingsScreen(
                     Text("• Never use metal scourers on the non-stick bread pan.", style = MaterialTheme.typography.bodySmall)
                     Text("• Apply food-grade oil to the kneading drive shaft quarterly.", style = MaterialTheme.typography.bodySmall)
                     Text("• Clean the upper radiant glass element with a damp cloth after cool-down.", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+
+        // Offline Mode & Local Storage Architecture Status Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("offline_storage_status_card"),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Storage,
+                        contentDescription = "Local Storage",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Offline Mode & Local Storage",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = "100% LOCAL READY",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "CrustCraft operates completely offline without requiring an active internet connection. All core application components reside locally on your device:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("• ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("Room Database: ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                        Text("All standard & custom recipes, favorites, and bake counts stored on-device.", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("• ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("Offline Diagnostic KB: ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                        Text("12+ failure modes & remedies available when disconnected from Gemini.", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("• ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("Loaf Photos: ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                        Text("Captured images are saved directly in app private internal storage.", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("• ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("Timers & Hardware: ", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                        Text("All countdowns, alarms, and simulation logic execute locally.", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }
