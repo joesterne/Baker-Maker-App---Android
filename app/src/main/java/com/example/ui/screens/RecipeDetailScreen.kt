@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Scale
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -86,6 +87,7 @@ import com.example.data.model.BreadRecipe
 import com.example.data.model.ConverterSettings
 import com.example.ui.components.BakerMeasurementConverterCard
 import com.example.ui.components.BakingUnitScaleConverter
+import com.example.ui.components.LoafTroubleshootingSection
 import com.example.ui.theme.AlertBerryRed
 import com.example.ui.theme.BakeFireOrange
 import com.example.ui.theme.BreadCrustGolden
@@ -901,6 +903,13 @@ fun RecipeDetailScreen(
                     }
                 }
             }
+
+            // Loaf Troubleshooting Prompt Area & Diagnosis Section
+            LoafTroubleshootingSection(
+                recipe = recipe,
+                currentModel = currentModel,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
         }

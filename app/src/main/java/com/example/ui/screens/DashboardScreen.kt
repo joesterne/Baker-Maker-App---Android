@@ -45,15 +45,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.AutoFixHigh
 import com.example.data.model.BreadRecipe
 import com.example.data.model.MachineTelemetry
 import com.example.ui.components.HydrationCalculatorSheet
 import com.example.ui.components.IngredientAlertBanner
+import com.example.ui.components.LoafTroubleshootingSection
 import com.example.ui.components.MachineStatusCard
 import com.example.ui.components.SourdoughCountdownTimerCard
 import com.example.ui.components.StageProgressStepper
 import com.example.ui.components.TemperatureAdjustmentPanel
+import com.example.ui.components.TroubleshootingPromptSheet
+import com.example.ui.theme.BakeFireOrange
 import com.example.ui.theme.BreadCrustGolden
 import com.example.ui.theme.BreadWarmWheat
 
@@ -90,6 +93,7 @@ fun DashboardScreen(
     modifier: Modifier = Modifier
 ) {
     var showHydrationSheet by remember { mutableStateOf(false) }
+    var showTroubleshootingSheet by remember { mutableStateOf(false) }
     var showRecipeDropdown by remember { mutableStateOf(false) }
     var showSpeedDropdown by remember { mutableStateOf(false) }
 
@@ -318,6 +322,35 @@ fun DashboardScreen(
                         )
                     }
                 }
+
+                // Loaf Doctor & Troubleshooting Shortcut
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = BakeFireOrange.copy(alpha = 0.15f),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { showTroubleshootingSheet = true }
+                        .testTag("troubleshooting_shortcut_btn")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoFixHigh,
+                            contentDescription = "Loaf Doctor & Troubleshooting",
+                            tint = BakeFireOrange,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Doctor",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = BakeFireOrange
+                        )
+                    }
+                }
             }
         }
 
@@ -374,5 +407,14 @@ fun DashboardScreen(
 
     if (showHydrationSheet) {
         HydrationCalculatorSheet(onDismiss = { showHydrationSheet = false })
+    }
+
+    if (showTroubleshootingSheet) {
+        TroubleshootingPromptSheet(
+            recipe = activeRecipe,
+            currentModel = telemetry.model,
+            onDismiss = { showTroubleshootingSheet = false },
+            onApplyCrustFix = { onSelectCrust(it) }
+        )
     }
 }
