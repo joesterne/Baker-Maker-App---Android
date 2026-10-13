@@ -141,7 +141,7 @@ fun TemperatureAdjustmentPanel(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                CrustShade.values().forEach { shade ->
+                CrustShade.entries.forEach { shade ->
                     val isSelected = telemetry.selectedCrust == shade
                     Surface(
                         modifier = Modifier
@@ -192,7 +192,7 @@ fun TemperatureAdjustmentPanel(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                LoafSize.values().forEach { size ->
+                LoafSize.entries.forEach { size ->
                     val isSelected = telemetry.selectedLoafSize == size
                     Surface(
                         modifier = Modifier

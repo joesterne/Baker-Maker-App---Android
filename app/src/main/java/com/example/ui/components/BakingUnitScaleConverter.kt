@@ -324,7 +324,7 @@ fun BakingUnitConverterSection(modifier: Modifier = Modifier) {
                     .horizontalScroll(scrollState),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                CommonBakingItem.values().forEach { item ->
+                CommonBakingItem.entries.forEach { item ->
                     val isSelected = selectedItem == item
                     FilterChip(
                         selected = isSelected,

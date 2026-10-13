@@ -8,29 +8,36 @@ import com.example.data.model.RecipeCategory
 import com.example.data.model.LoafSize
 import com.example.data.model.RecipeIngredient
 import com.example.data.model.YeastType
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 class Converters {
-    private val moshi: Moshi = Moshi.Builder()
-        .addLast(KotlinJsonAdapterFactory())
-        .build()
+    companion object {
+        private val moshi: Moshi = Moshi.Builder()
+            .addLast(KotlinJsonAdapterFactory())
+            .build()
 
-    private val ingredientListType = Types.newParameterizedType(List::class.java, RecipeIngredient::class.java)
-    private val stageListType = Types.newParameterizedType(List::class.java, BakingStage::class.java)
-    private val stringListType = Types.newParameterizedType(List::class.java, String::class.java)
+        private val ingredientListType = Types.newParameterizedType(List::class.java, RecipeIngredient::class.java)
+        private val stageListType = Types.newParameterizedType(List::class.java, BakingStage::class.java)
+        private val stringListType = Types.newParameterizedType(List::class.java, String::class.java)
+
+        private val ingredientAdapter: JsonAdapter<List<RecipeIngredient>> = moshi.adapter(ingredientListType)
+        private val stageAdapter: JsonAdapter<List<BakingStage>> = moshi.adapter(stageListType)
+        private val stringListAdapter: JsonAdapter<List<String>> = moshi.adapter(stringListType)
+    }
 
     @TypeConverter
     fun fromIngredientList(value: List<RecipeIngredient>?): String {
-        return value?.let { moshi.adapter<List<RecipeIngredient>>(ingredientListType).toJson(it) } ?: "[]"
+        return if (value.isNullOrEmpty()) "[]" else ingredientAdapter.toJson(value)
     }
 
     @TypeConverter
     fun toIngredientList(value: String?): List<RecipeIngredient> {
-        if (value.isNullOrBlank()) return emptyList()
+        if (value.isNullOrBlank() || value == "[]") return emptyList()
         return try {
-            moshi.adapter<List<RecipeIngredient>>(ingredientListType).fromJson(value) ?: emptyList()
+            ingredientAdapter.fromJson(value) ?: emptyList()
         } catch (_: Exception) {
             emptyList()
         }
@@ -38,14 +45,14 @@ class Converters {
 
     @TypeConverter
     fun fromStageList(value: List<BakingStage>?): String {
-        return value?.let { moshi.adapter<List<BakingStage>>(stageListType).toJson(it) } ?: "[]"
+        return if (value.isNullOrEmpty()) "[]" else stageAdapter.toJson(value)
     }
 
     @TypeConverter
     fun toStageList(value: String?): List<BakingStage> {
-        if (value.isNullOrBlank()) return emptyList()
+        if (value.isNullOrBlank() || value == "[]") return emptyList()
         return try {
-            moshi.adapter<List<BakingStage>>(stageListType).fromJson(value) ?: emptyList()
+            stageAdapter.fromJson(value) ?: emptyList()
         } catch (_: Exception) {
             emptyList()
         }
@@ -53,14 +60,14 @@ class Converters {
 
     @TypeConverter
     fun fromStringList(value: List<String>?): String {
-        return value?.let { moshi.adapter<List<String>>(stringListType).toJson(it) } ?: "[]"
+        return if (value.isNullOrEmpty()) "[]" else stringListAdapter.toJson(value)
     }
 
     @TypeConverter
     fun toStringList(value: String?): List<String> {
-        if (value.isNullOrBlank()) return emptyList()
+        if (value.isNullOrBlank() || value == "[]") return emptyList()
         return try {
-            moshi.adapter<List<String>>(stringListType).fromJson(value) ?: emptyList()
+            stringListAdapter.fromJson(value) ?: emptyList()
         } catch (_: Exception) {
             emptyList()
         }

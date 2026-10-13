@@ -200,7 +200,7 @@ fun RecipeLibraryScreen(
                     .horizontalScroll(categoryScroll),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                RecipeCategory.values().forEach { category ->
+                RecipeCategory.entries.forEach { category ->
                     val isSelected = selectedCategory == category
                     val count = categoryCounts[category]
                     FilterChip(

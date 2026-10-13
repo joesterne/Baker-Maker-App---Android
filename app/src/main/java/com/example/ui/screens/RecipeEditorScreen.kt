@@ -528,7 +528,7 @@ fun RecipeEditorScreen(
                             expanded = yeastExpanded,
                             onDismissRequest = { yeastExpanded = false }
                         ) {
-                            YeastType.values().forEach { yeast ->
+                            YeastType.entries.forEach { yeast ->
                                 DropdownMenuItem(
                                     text = {
                                         Column {

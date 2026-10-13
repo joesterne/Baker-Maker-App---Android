@@ -138,10 +138,10 @@ fun MachineSettingsScreen(
                             onClick = { selectedModelFilter = category },
                             label = {
                                 val count = when (category) {
-                                    "2-lb Dual Blade" -> BreadMakerModel.values().count { it.bladeCount == 2 }
-                                    "1-lb Compact" -> BreadMakerModel.values().count { it.bladeCount == 1 && it.isZojirushi }
-                                    "Universal" -> BreadMakerModel.values().count { !it.isZojirushi }
-                                    else -> BreadMakerModel.values().size
+                                    "2-lb Dual Blade" -> BreadMakerModel.entries.count { it.bladeCount == 2 }
+                                    "1-lb Compact" -> BreadMakerModel.entries.count { it.bladeCount == 1 && it.isZojirushi }
+                                    "Universal" -> BreadMakerModel.entries.count { !it.isZojirushi }
+                                    else -> BreadMakerModel.entries.size
                                 }
                                 Text("$category ($count)", style = MaterialTheme.typography.labelSmall)
                             },
@@ -152,7 +152,7 @@ fun MachineSettingsScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                val filteredModels = BreadMakerModel.values().filter { model ->
+                val filteredModels = BreadMakerModel.entries.filter { model ->
                     when (selectedModelFilter) {
                         "2-lb Dual Blade" -> model.bladeCount == 2
                         "1-lb Compact" -> model.bladeCount == 1 && model.isZojirushi
@@ -404,7 +404,7 @@ fun MachineSettingsScreen(
                                 onClick = {
                                     selectedCourseNumber = course.courseNumber
                                     // Map to nearest standard enum for telemetry sync
-                                    val mappedStandard = ZojirushiMenuCourse.values().find { it.courseNumber == course.courseNumber }
+                                    val mappedStandard = ZojirushiMenuCourse.entries.find { it.courseNumber == course.courseNumber }
                                         ?: ZojirushiMenuCourse.WHITE
                                     onSelectZojirushiCourse(mappedStandard)
                                 },

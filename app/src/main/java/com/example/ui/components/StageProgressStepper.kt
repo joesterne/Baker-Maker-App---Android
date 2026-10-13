@@ -111,7 +111,7 @@ fun StageProgressStepper(
                 Column(horizontalAlignment = Alignment.End) {
                     val remainingMins = telemetry.stageRemainingSeconds / 60
                     val remainingSecs = telemetry.stageRemainingSeconds % 60
-                    val formattedTime = String.format("%02d:%02d", remainingMins, remainingSecs)
+                    val formattedTime = com.example.ui.util.FastTimeFormatter.formatMmSs(remainingMins, remainingSecs)
 
                     Text(
                         text = formattedTime,

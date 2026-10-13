@@ -278,7 +278,7 @@ fun GramsToMlConverterSection(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            LiquidDensityItem.values().forEach { liquid ->
+            LiquidDensityItem.entries.forEach { liquid ->
                 val isSelected = selectedLiquid == liquid
                 FilterChip(
                     selected = isSelected,
@@ -583,7 +583,7 @@ fun CupsToGramsConverterSection(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            FlourCupDensity.values().forEach { flour ->
+            FlourCupDensity.entries.forEach { flour ->
                 val isSelected = selectedFlour == flour
                 FilterChip(
                     selected = isSelected,
@@ -999,7 +999,7 @@ fun ConverterPreferencesSection(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            UnitSystem.values().forEach { unitSys ->
+            UnitSystem.entries.forEach { unitSys ->
                 val isSelected = settings.preferredUnitSystem == unitSys
                 Surface(
                     modifier = Modifier

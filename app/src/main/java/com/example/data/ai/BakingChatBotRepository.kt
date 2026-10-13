@@ -7,11 +7,14 @@ import android.net.Uri
 import android.util.Base64
 import com.example.data.model.BreadMakerModel
 import com.example.data.model.BreadRecipe
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -27,6 +30,8 @@ data class BakingChatUiState(
 class BakingChatBotRepository(
     private val context: Context
 ) {
+    private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     private val _uiState = MutableStateFlow(
         BakingChatUiState(
             messages = listOf(
@@ -44,12 +49,17 @@ class BakingChatBotRepository(
             _uiState.update { it.copy(pendingImageUri = null, pendingImageBase64 = null) }
             return
         }
-        val base64 = uriToBase64(uri)
-        _uiState.update {
-            it.copy(
-                pendingImageUri = uri,
-                pendingImageBase64 = base64
-            )
+        // Immediately set URI so UI updates the thumbnail preview without lag
+        _uiState.update { it.copy(pendingImageUri = uri, pendingImageBase64 = null) }
+        repositoryScope.launch {
+            val base64 = uriToBase64(uri)
+            _uiState.update { current ->
+                if (current.pendingImageUri == uri) {
+                    current.copy(pendingImageBase64 = base64)
+                } else {
+                    current
+                }
+            }
         }
     }
 
@@ -207,30 +217,48 @@ class BakingChatBotRepository(
 
     private fun uriToBase64(uri: Uri): String? {
         return try {
-            val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-            val original = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
-
-            if (original == null) return null
-
-            // Scale down to max 1024x1024 for fast upload & prompt responsiveness
             val maxDimension = 1024
-            val width = original.width
-            val height = original.height
-            val scale = if (width > maxDimension || height > maxDimension) {
-                val ratio = width.toFloat() / height.toFloat()
-                if (ratio > 1) {
-                    Bitmap.createScaledBitmap(original, maxDimension, (maxDimension / ratio).toInt(), true)
-                } else {
-                    Bitmap.createScaledBitmap(original, (maxDimension * ratio).toInt(), maxDimension, true)
+
+            // Step 1: Decode image dimensions without loading pixel data
+            val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, boundsOptions)
+            }
+
+            var inSampleSize = 1
+            if (boundsOptions.outHeight > maxDimension || boundsOptions.outWidth > maxDimension) {
+                val halfHeight = boundsOptions.outHeight / 2
+                val halfWidth = boundsOptions.outWidth / 2
+                while ((halfHeight / inSampleSize) >= maxDimension && (halfWidth / inSampleSize) >= maxDimension) {
+                    inSampleSize *= 2
                 }
+            }
+
+            // Step 2: Decode downsampled bitmap directly into memory
+            val decodeOptions = BitmapFactory.Options().apply {
+                this.inSampleSize = inSampleSize
+                inPreferredConfig = Bitmap.Config.RGB_565 // 50% memory savings
+            }
+            val sampled = context.contentResolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, decodeOptions)
+            } ?: return null
+
+            // Step 3: Precise scale if still slightly larger than maxDimension
+            val finalBitmap = if (sampled.width > maxDimension || sampled.height > maxDimension) {
+                val ratio = sampled.width.toFloat() / sampled.height.toFloat()
+                val targetW = if (ratio > 1) maxDimension else (maxDimension * ratio).toInt()
+                val targetH = if (ratio > 1) (maxDimension / ratio).toInt() else maxDimension
+                val scaled = Bitmap.createScaledBitmap(sampled, targetW, targetH, true)
+                if (scaled != sampled) sampled.recycle()
+                scaled
             } else {
-                original
+                sampled
             }
 
             val outputStream = ByteArrayOutputStream()
-            scale.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
             val bytes = outputStream.toByteArray()
+            finalBitmap.recycle()
             Base64.encodeToString(bytes, Base64.NO_WRAP)
         } catch (e: Exception) {
             e.printStackTrace()

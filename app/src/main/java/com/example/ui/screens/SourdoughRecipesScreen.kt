@@ -133,7 +133,7 @@ fun SourdoughRecipesScreen(
                 val activeThemeColor = if (isBake) BakeFireOrange else if (isProof) ProofingBlue else MaterialTheme.colorScheme.primary
                 val remMins = telemetry.stageRemainingSeconds / 60
                 val remSecs = telemetry.stageRemainingSeconds % 60
-                val timeFormatted = String.format("%02d:%02d", remMins, remSecs)
+                val timeFormatted = com.example.ui.util.FastTimeFormatter.formatMmSs(remMins, remSecs)
 
                 Card(
                     modifier = Modifier
@@ -350,7 +350,7 @@ fun SourdoughRecipesScreen(
                     .horizontalScroll(filterScroll),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                HydrationFilter.values().forEach { filter ->
+                HydrationFilter.entries.forEach { filter ->
                     val isSelected = selectedHydrationFilter == filter
                     FilterChip(
                         selected = isSelected,

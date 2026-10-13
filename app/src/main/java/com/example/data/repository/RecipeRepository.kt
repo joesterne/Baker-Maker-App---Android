@@ -23,14 +23,7 @@ class RecipeRepository(
         recipeDao.getSourdoughRecipes(),
         favoriteRecipeDao.getAllFavorites()
     ) { entities, favorites ->
-        val favMap = favorites.associateBy { it.recipeId }
-        entities.map { entity ->
-            val fav = favMap[entity.id]
-            entity.toDomain().copy(
-                isFavorite = fav?.isFavorite ?: false,
-                bakeCount = fav?.bakeCount ?: 0
-            )
-        }
+        entities.toDomainWithFavorites(favorites)
     }
 
     // All recipes from Room combined with persistent favorites & bake stats
@@ -38,14 +31,7 @@ class RecipeRepository(
         recipeDao.getAllRecipes(),
         favoriteRecipeDao.getAllFavorites()
     ) { entities, favorites ->
-        val favMap = favorites.associateBy { it.recipeId }
-        entities.map { entity ->
-            val fav = favMap[entity.id]
-            entity.toDomain().copy(
-                isFavorite = fav?.isFavorite ?: false,
-                bakeCount = fav?.bakeCount ?: 0
-            )
-        }
+        entities.toDomainWithFavorites(favorites)
     }
 
     // Custom bread recipes stored in Room combined with persistent favorites & bake stats
@@ -53,27 +39,29 @@ class RecipeRepository(
         customRecipeDao.getAllCustomRecipes(),
         favoriteRecipeDao.getAllFavorites()
     ) { entities, favorites ->
-        val favMap = favorites.associateBy { it.recipeId }
+        if (entities.isEmpty()) return@combine emptyList()
+        val favMap = if (favorites.isNotEmpty()) favorites.associateBy { it.recipeId } else emptyMap()
         entities.map { entity ->
             val fav = favMap[entity.id]
-            entity.toDomain().copy(
-                isFavorite = fav?.isFavorite ?: false,
-                bakeCount = fav?.bakeCount ?: 0
-            )
+            if (fav != null) {
+                entity.toDomain().copy(
+                    isFavorite = fav.isFavorite,
+                    bakeCount = fav.bakeCount
+                )
+            } else {
+                entity.toDomain()
+            }
         }
     }
 
-    // Direct flow of favorite recipes
+    // Direct flow of favorite recipes, preserving SQLite indexed sort order
     val favoriteRecipes: Flow<List<BreadRecipe>> = combine(
         allRecipes,
         favoriteRecipeDao.getFavoriteRecipesList()
     ) { all, favList ->
-        val favIds = favList.map { it.recipeId }.toSet()
-        all.filter { it.id in favIds }.sortedWith(
-            compareByDescending<BreadRecipe> { it.bakeCount }
-                .thenByDescending { it.isFavorite }
-                .thenBy { it.title }
-        )
+        if (favList.isEmpty() || all.isEmpty()) return@combine emptyList()
+        val recipeMap = all.associateBy { it.id }
+        favList.mapNotNull { fav -> recipeMap[fav.recipeId] }
     }
 
     /**
@@ -84,14 +72,7 @@ class RecipeRepository(
             recipeDao.getRecipesByCategory(category),
             favoriteRecipeDao.getAllFavorites()
         ) { entities, favorites ->
-            val favMap = favorites.associateBy { it.recipeId }
-            entities.map { entity ->
-                val fav = favMap[entity.id]
-                entity.toDomain().copy(
-                    isFavorite = fav?.isFavorite ?: false,
-                    bakeCount = fav?.bakeCount ?: 0
-                )
-            }
+            entities.toDomainWithFavorites(favorites)
         }
     }
 
@@ -103,13 +84,18 @@ class RecipeRepository(
             customRecipeDao.searchCustomRecipes(query),
             favoriteRecipeDao.getAllFavorites()
         ) { entities, favorites ->
-            val favMap = favorites.associateBy { it.recipeId }
+            if (entities.isEmpty()) return@combine emptyList()
+            val favMap = if (favorites.isNotEmpty()) favorites.associateBy { it.recipeId } else emptyMap()
             entities.map { entity ->
                 val fav = favMap[entity.id]
-                entity.toDomain().copy(
-                    isFavorite = fav?.isFavorite ?: false,
-                    bakeCount = fav?.bakeCount ?: 0
-                )
+                if (fav != null) {
+                    entity.toDomain().copy(
+                        isFavorite = fav.isFavorite,
+                        bakeCount = fav.bakeCount
+                    )
+                } else {
+                    entity.toDomain()
+                }
             }
         }
     }
@@ -210,3 +196,21 @@ class RecipeRepository(
         )
     }
 }
+
+private fun List<RecipeEntity>.toDomainWithFavorites(favorites: List<FavoriteRecipeEntity>): List<BreadRecipe> {
+    if (this.isEmpty()) return emptyList()
+    if (favorites.isEmpty()) return this.map { it.toDomain() }
+    val favMap = favorites.associateBy { it.recipeId }
+    return this.map { entity ->
+        val fav = favMap[entity.id]
+        if (fav != null) {
+            entity.toDomain().copy(
+                isFavorite = fav.isFavorite,
+                bakeCount = fav.bakeCount
+            )
+        } else {
+            entity.toDomain()
+        }
+    }
+}
+
