@@ -95,7 +95,7 @@ fun SourdoughCountdownTimerCard(
 
     val remainingMins = telemetry.stageRemainingSeconds / 60
     val remainingSecs = telemetry.stageRemainingSeconds % 60
-    val timeFormatted = String.format("%02d:%02d", remainingMins, remainingSecs)
+    val timeFormatted = com.example.ui.util.FastTimeFormatter.formatMmSs(remainingMins, remainingSecs)
 
     val themeColor = when {
         isProofing -> ProofingBlue

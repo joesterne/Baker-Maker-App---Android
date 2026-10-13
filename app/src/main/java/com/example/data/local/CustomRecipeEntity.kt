@@ -1,6 +1,7 @@
 package com.example.data.local
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.example.data.model.BakingStage
 import com.example.data.model.BreadRecipe
@@ -10,7 +11,13 @@ import com.example.data.model.LoafSize
 import com.example.data.model.RecipeIngredient
 import com.example.data.model.YeastType
 
-@Entity(tableName = "custom_recipes")
+@Entity(
+    tableName = "custom_recipes",
+    indices = [
+        Index("category"),
+        Index("createdAt")
+    ]
+)
 data class CustomRecipeEntity(
     @PrimaryKey
     val id: String,

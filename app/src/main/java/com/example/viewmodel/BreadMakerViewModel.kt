@@ -25,6 +25,7 @@ import com.example.data.model.ZojirushiMenuCourse
 import com.example.data.repository.RecipeRepository
 import com.example.notification.BreadNotificationHelper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -121,24 +123,33 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
             initialValue = emptyList()
         )
 
+    @OptIn(FlowPreview::class)
     val filteredRecipes: StateFlow<List<BreadRecipe>> = combine(
         recipes,
-        _searchQuery,
+        _searchQuery.debounce { if (it.isEmpty()) 0L else 120L },
         _selectedCategory
     ) { all, query, category ->
-        val filtered = all.filter { recipe ->
-            val matchesCategory = when (category) {
-                RecipeCategory.ALL -> true
-                RecipeCategory.FAVORITES -> recipe.isFavorite || recipe.bakeCount > 0
-                RecipeCategory.CUSTOM -> recipe.isCustom
-                else -> recipe.category == category
+        val trimmedQuery = query.trim()
+        val isBlank = trimmedQuery.isEmpty()
+
+        val filtered = if (isBlank && category == RecipeCategory.ALL) {
+            all
+        } else {
+            all.filter { recipe ->
+                val matchesCategory = when (category) {
+                    RecipeCategory.ALL -> true
+                    RecipeCategory.FAVORITES -> recipe.isFavorite || recipe.bakeCount > 0
+                    RecipeCategory.CUSTOM -> recipe.isCustom
+                    else -> recipe.category == category
+                }
+                if (!matchesCategory) return@filter false
+                if (isBlank) return@filter true
+
+                recipe.title.contains(trimmedQuery, ignoreCase = true) ||
+                        recipe.primaryFlour.contains(trimmedQuery, ignoreCase = true) ||
+                        recipe.specialtyFlours.any { it.contains(trimmedQuery, ignoreCase = true) } ||
+                        recipe.description.contains(trimmedQuery, ignoreCase = true)
             }
-            val matchesQuery = query.isBlank() ||
-                    recipe.title.contains(query, ignoreCase = true) ||
-                    recipe.primaryFlour.contains(query, ignoreCase = true) ||
-                    recipe.specialtyFlours.any { it.contains(query, ignoreCase = true) } ||
-                    recipe.description.contains(query, ignoreCase = true)
-            matchesCategory && matchesQuery
         }
         if (category == RecipeCategory.FAVORITES) {
             filtered.sortedWith(
@@ -155,15 +166,20 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
         initialValue = PreloadedRecipes.RECIPES
     )
 
-    // Pre-computed counts per recipe category for organization tabs & badges
+    // Pre-computed counts per recipe category computed in a single O(N) pass
     val categoryCounts: StateFlow<Map<RecipeCategory, Int>> = recipes.map { all ->
-        val counts = mutableMapOf<RecipeCategory, Int>()
-        counts[RecipeCategory.ALL] = all.size
-        counts[RecipeCategory.FAVORITES] = all.count { it.isFavorite || it.bakeCount > 0 }
-        counts[RecipeCategory.CUSTOM] = all.count { it.isCustom }
-        RecipeCategory.userSelectable.forEach { cat ->
-            counts[cat] = all.count { it.category == cat }
+        val counts = java.util.EnumMap<RecipeCategory, Int>(RecipeCategory::class.java)
+        var favCount = 0
+        var customCount = 0
+        for (recipe in all) {
+            if (recipe.isFavorite || recipe.bakeCount > 0) favCount++
+            if (recipe.isCustom) customCount++
+            val cat = recipe.category
+            counts[cat] = (counts[cat] ?: 0) + 1
         }
+        counts[RecipeCategory.ALL] = all.size
+        counts[RecipeCategory.FAVORITES] = favCount
+        counts[RecipeCategory.CUSTOM] = customCount
         counts
     }.stateIn(
         scope = viewModelScope,
@@ -535,6 +551,9 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun advanceTimer(secondsDelta: Int) {
+        var nextStageAlertIndex: Int? = null
+        var cycleFinished = false
+
         _telemetry.update { current ->
             if (current.state != MachineState.RUNNING) return@update current
             val recipe = current.activeRecipe ?: return@update current
@@ -625,9 +644,7 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
                         isProofingStep = isProofing
                     )
 
-                    viewModelScope.launch {
-                        checkForStageAlert(nextIndex, isStageStart = true)
-                    }
+                    nextStageAlertIndex = nextIndex
                     val updated = current.copy(
                         currentStageIndex = nextIndex,
                         stageElapsedSeconds = 0,
@@ -645,9 +662,7 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
                     recalculateTargetTemp(updated)
                 } else {
                     // All stages complete
-                    viewModelScope.launch {
-                        completeCycle()
-                    }
+                    cycleFinished = true
                     current.copy(
                         state = MachineState.COMPLETED,
                         stageElapsedSeconds = current.stageDurationSeconds,
@@ -673,6 +688,12 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
                     lidHeaterActive = lidHeater
                 )
             }
+        }
+
+        if (cycleFinished) {
+            completeCycle()
+        } else if (nextStageAlertIndex != null) {
+            checkForStageAlert(nextStageAlertIndex!!, isStageStart = true)
         }
     }
 

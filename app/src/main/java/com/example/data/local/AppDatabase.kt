@@ -43,20 +43,6 @@ abstract class AppDatabase : RoomDatabase() {
                                 }
                             }
                         }
-
-                        override fun onOpen(db: SupportSQLiteDatabase) {
-                            super.onOpen(db)
-                            INSTANCE?.let { database ->
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    // Ensure latest preloaded and official manual recipes are seeded
-                                    seedInitialRecipes(
-                                        database.recipeDao(),
-                                        database.customRecipeDao(),
-                                        database.favoriteRecipeDao()
-                                    )
-                                }
-                            }
-                        }
                     })
                     .build()
                 INSTANCE = instance
@@ -69,45 +55,49 @@ abstract class AppDatabase : RoomDatabase() {
             customDao: CustomRecipeDao? = null,
             favoriteDao: FavoriteRecipeDao? = null
         ) {
-            val entities = PreloadedRecipes.RECIPES.map { RecipeEntity.fromDomain(it) }
-            dao.insertAll(entities)
-
-            // Seed initial custom recipes into the custom_recipes Room table
-            customDao?.let { cDao ->
-                if (cDao.getCustomRecipeCount() == 0) {
-                    cDao.insertAllCustomRecipes(PreloadedCustomRecipes.INITIAL_CUSTOM_RECIPES)
-                    // Also mirror into main recipes table so they are immediately searchable
-                    val customEntities = PreloadedCustomRecipes.INITIAL_CUSTOM_RECIPES.map {
-                        RecipeEntity.fromDomain(it.toDomain())
-                    }
-                    dao.insertAll(customEntities)
+            withContext(Dispatchers.IO) {
+                if (dao.getRecipeCount() == 0) {
+                    val entities = PreloadedRecipes.RECIPES.map { RecipeEntity.fromDomain(it) }
+                    dao.insertAll(entities)
                 }
-            }
 
-            // Seed initial starter favorites and bake counts if favorites table is empty
-            favoriteDao?.let { fDao ->
-                if (fDao.getFavoriteCount() == 0) {
-                    val initialFavorites = listOf(
-                        FavoriteRecipeEntity(
-                            recipeId = "sf_sourdough_classic",
-                            isFavorite = true,
-                            bakeCount = 5,
-                            lastBakedAt = System.currentTimeMillis() - 86400000L * 2
-                        ),
-                        FavoriteRecipeEntity(
-                            recipeId = "hokkaido_milk_bread",
-                            isFavorite = true,
-                            bakeCount = 3,
-                            lastBakedAt = System.currentTimeMillis() - 86400000L * 4
-                        ),
-                        FavoriteRecipeEntity(
-                            recipeId = "artisan_boule_country",
-                            isFavorite = true,
-                            bakeCount = 2,
-                            lastBakedAt = System.currentTimeMillis() - 86400000L * 7
+                // Seed initial custom recipes into the custom_recipes Room table
+                customDao?.let { cDao ->
+                    if (cDao.getCustomRecipeCount() == 0) {
+                        cDao.insertAllCustomRecipes(PreloadedCustomRecipes.INITIAL_CUSTOM_RECIPES)
+                        // Also mirror into main recipes table so they are immediately searchable
+                        val customEntities = PreloadedCustomRecipes.INITIAL_CUSTOM_RECIPES.map {
+                            RecipeEntity.fromDomain(it.toDomain())
+                        }
+                        dao.insertAll(customEntities)
+                    }
+                }
+
+                // Seed initial starter favorites and bake counts if favorites table is empty
+                favoriteDao?.let { fDao ->
+                    if (fDao.getFavoriteCount() == 0) {
+                        val initialFavorites = listOf(
+                            FavoriteRecipeEntity(
+                                recipeId = "sf_sourdough_classic",
+                                isFavorite = true,
+                                bakeCount = 5,
+                                lastBakedAt = System.currentTimeMillis() - 86400000L * 2
+                            ),
+                            FavoriteRecipeEntity(
+                                recipeId = "hokkaido_milk_bread",
+                                isFavorite = true,
+                                bakeCount = 3,
+                                lastBakedAt = System.currentTimeMillis() - 86400000L * 4
+                            ),
+                            FavoriteRecipeEntity(
+                                recipeId = "artisan_boule_country",
+                                isFavorite = true,
+                                bakeCount = 2,
+                                lastBakedAt = System.currentTimeMillis() - 86400000L * 7
+                            )
                         )
-                    )
-                    fDao.insertAll(initialFavorites)
+                        fDao.insertAll(initialFavorites)
+                    }
                 }
             }
         }

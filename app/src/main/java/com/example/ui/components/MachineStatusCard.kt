@@ -46,9 +46,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -313,7 +313,9 @@ fun MachineStatusCard(
                                         tint = if (telemetry.motorRpm > 0) BreadWarmWheat else Color(0xFF888888),
                                         modifier = Modifier
                                             .size(15.dp)
-                                            .rotate(if (telemetry.motorRpm > 0) motorRotation else 0f)
+                                            .graphicsLayer {
+                                                rotationZ = if (telemetry.motorRpm > 0) motorRotation else 0f
+                                            }
                                     )
                                     Spacer(modifier = Modifier.width(2.dp))
                                     Icon(
@@ -322,7 +324,9 @@ fun MachineStatusCard(
                                         tint = if (telemetry.motorRpm > 0) BreadWarmWheat else Color(0xFF888888),
                                         modifier = Modifier
                                             .size(15.dp)
-                                            .rotate(if (telemetry.motorRpm > 0) motorRotationRight else 0f)
+                                            .graphicsLayer {
+                                                rotationZ = if (telemetry.motorRpm > 0) motorRotationRight else 0f
+                                            }
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
@@ -346,7 +350,9 @@ fun MachineStatusCard(
                                         tint = if (telemetry.motorRpm > 0) BreadWarmWheat else Color(0xFF888888),
                                         modifier = Modifier
                                             .size(16.dp)
-                                            .rotate(if (telemetry.motorRpm > 0) motorRotation else 0f)
+                                            .graphicsLayer {
+                                                rotationZ = if (telemetry.motorRpm > 0) motorRotation else 0f
+                                            }
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(

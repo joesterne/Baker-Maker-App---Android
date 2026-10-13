@@ -1,5 +1,7 @@
 package com.example.data.model
 
+import com.squareup.moshi.JsonClass
+
 enum class BreadMakerModel(
     val modelName: String,
     val shortName: String,
@@ -695,6 +697,7 @@ enum class MachineState {
     COMPLETED
 }
 
+@JsonClass(generateAdapter = true)
 data class RecipeIngredient(
     val id: String,
     val name: String,
@@ -705,6 +708,7 @@ data class RecipeIngredient(
     val notes: String = ""
 )
 
+@JsonClass(generateAdapter = true)
 data class BakingStage(
     val type: BakingStageType,
     val title: String,
@@ -718,6 +722,7 @@ data class BakingStage(
     val chimePrompt: String? = null
 )
 
+@JsonClass(generateAdapter = true)
 data class BreadRecipe(
     val id: String,
     val title: String,

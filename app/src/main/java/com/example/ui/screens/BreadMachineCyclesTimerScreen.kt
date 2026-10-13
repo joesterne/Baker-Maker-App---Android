@@ -147,12 +147,14 @@ fun BreadMachineCyclesTimerScreen(
         label = "stage_progress"
     )
 
-    // Autonomous Ticker Loop (respects simulation speed)
+    // Autonomous Ticker Loop (respects simulation speed without flooding Compose)
     LaunchedEffect(isRunning, simulationSpeed, currentStageIndex) {
         while (isRunning) {
-            delay(1000L / simulationSpeed.coerceAtLeast(1))
+            val stepDelay = if (simulationSpeed > 10) 250L else (1000L / simulationSpeed.coerceAtLeast(1))
+            val stepDelta = if (simulationSpeed > 10) (simulationSpeed / 4).coerceAtLeast(1) else 1
+            delay(stepDelay)
             val currentStageSecs = activeStage.durationMinutes * 60
-            if (stageElapsedSeconds + 1 >= currentStageSecs) {
+            if (stageElapsedSeconds + stepDelta >= currentStageSecs) {
                 // Stage finished! Check for alerts or advance
                 if (activeStage.hasIngredientAlert && activeStage.alertTitle != null) {
                     activeAlertTitle = "🔔 ${activeStage.alertTitle}"
@@ -163,7 +165,7 @@ fun BreadMachineCyclesTimerScreen(
                 if (nextIndex < stages.size) {
                     currentStageIndex = nextIndex
                     stageElapsedSeconds = 0
-                    totalElapsedSeconds += 1
+                    totalElapsedSeconds += stepDelta
                 } else {
                     // Full cycle complete!
                     isRunning = false
@@ -173,8 +175,8 @@ fun BreadMachineCyclesTimerScreen(
                     break
                 }
             } else {
-                stageElapsedSeconds += 1
-                totalElapsedSeconds = (totalElapsedSeconds + 1).coerceAtMost(totalCycleDurationSeconds)
+                stageElapsedSeconds += stepDelta
+                totalElapsedSeconds = (totalElapsedSeconds + stepDelta).coerceAtMost(totalCycleDurationSeconds)
             }
         }
     }
@@ -629,16 +631,9 @@ private fun DualRingCountdownHeroCard(
 
     val stageMins = stageRemainingSeconds / 60
     val stageSecs = stageRemainingSeconds % 60
-    val stageTimeFormatted = String.format("%02d:%02d", stageMins, stageSecs)
+    val stageTimeFormatted = com.example.ui.util.FastTimeFormatter.formatMmSs(stageMins, stageSecs)
 
-    val totalHours = totalRemainingSeconds / 3600
-    val totalMins = (totalRemainingSeconds % 3600) / 60
-    val totalSecs = totalRemainingSeconds % 60
-    val totalTimeFormatted = if (totalHours > 0) {
-        String.format("%02d:%02d:%02d", totalHours, totalMins, totalSecs)
-    } else {
-        String.format("%02d:%02d", totalMins, totalSecs)
-    }
+    val totalTimeFormatted = com.example.ui.util.FastTimeFormatter.formatSeconds(totalRemainingSeconds)
 
     Card(
         modifier = modifier

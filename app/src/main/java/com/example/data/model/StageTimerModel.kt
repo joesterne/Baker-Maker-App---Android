@@ -38,17 +38,7 @@ data class BreadStageTimer(
         } else 0f
 
     val formattedRemaining: String
-        get() {
-            val total = remainingSeconds.coerceAtLeast(0)
-            val hours = total / 3600
-            val minutes = (total % 3600) / 60
-            val seconds = total % 60
-            return if (hours > 0) {
-                String.format(java.util.Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
-            } else {
-                String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds)
-            }
-        }
+        get() = com.example.ui.util.FastTimeFormatter.formatSeconds(remainingSeconds)
 
     val formattedTargetDuration: String
         get() {

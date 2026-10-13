@@ -128,14 +128,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                val telemetry by viewModel.telemetry.collectAsStateWithLifecycle()
-                val recipes by viewModel.recipes.collectAsStateWithLifecycle()
-                val sourdoughRecipes by viewModel.sourdoughRecipes.collectAsStateWithLifecycle()
-                val filteredRecipes by viewModel.filteredRecipes.collectAsStateWithLifecycle()
-                val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
-                val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
-                val categoryCounts by viewModel.categoryCounts.collectAsStateWithLifecycle()
-
                 var currentTab by remember { mutableStateOf(AppTab.DASHBOARD) }
                 var currentScreen by remember { mutableStateOf<ScreenState>(ScreenState.Tabs) }
 
@@ -144,6 +136,8 @@ class MainActivity : ComponentActivity() {
                         BackHandler {
                             currentScreen = ScreenState.Tabs
                         }
+                        val recipes by viewModel.recipes.collectAsStateWithLifecycle()
+                        val telemetry by viewModel.telemetry.collectAsStateWithLifecycle()
                         val currentRecipe = recipes.find { it.id == screen.recipe.id } ?: screen.recipe
                         RecipeDetailScreen(
                             recipe = currentRecipe,
@@ -268,40 +262,15 @@ class MainActivity : ComponentActivity() {
                             Box(modifier = Modifier.padding(innerPadding)) {
                                 when (currentTab) {
                                     AppTab.DASHBOARD -> {
-                                        DashboardScreen(
-                                            telemetry = telemetry,
-                                            recipes = recipes,
-                                            onSelectRecipe = { viewModel.loadRecipe(it) },
+                                        DashboardTabContent(
+                                            viewModel = viewModel,
                                             onNavigateToRecipes = { currentTab = AppTab.SOURDOUGH },
-                                            onToggleConnection = { viewModel.toggleConnection() },
-                                            onToggleLid = { viewModel.toggleLid() },
-                                            onTogglePanLock = { viewModel.togglePanLock() },
-                                            onToggleLamp = { viewModel.toggleInteriorLamp() },
-                                            onSkipStage = { viewModel.skipToNextStage() },
-                                            onJumpToStage = { viewModel.jumpToStage(it) },
-                                            onTestNotification = { viewModel.testIngredientNotification() },
-                                            onDismissAlert = { viewModel.dismissCurrentAlert() },
-                                            onPaddleRemoved = { viewModel.markPaddleRemoved() },
-                                            onAdjustProofTemp = { viewModel.adjustProofTemp(it) },
-                                            onAdjustBakeTemp = { viewModel.adjustBakeTemp(it) },
-                                            onToggleCrustBooster = { viewModel.toggleCrustBooster() },
-                                            onSelectCrust = { viewModel.setCrustShade(it) },
-                                            onSelectLoafSize = { viewModel.setLoafSize(it) },
-                                            onStartCycle = { viewModel.startBakingCycle() },
-                                            onPauseCycle = { viewModel.pauseBakingCycle() },
-                                            onResumeCycle = { viewModel.resumeBakingCycle() },
-                                            onStopCycle = { viewModel.stopBakingCycle() },
-                                            onSetSimulationSpeed = { viewModel.setSimulationSpeed(it) },
-                                            onExtendStage = { viewModel.extendCurrentStage(it) },
-                                            onDismissStepAlert = { viewModel.dismissStepCompletionAlert() },
-                                            onProceedNextStep = { viewModel.proceedToNextStep() },
-                                            onTestStepAlert = { viewModel.testProofingCountdownAlert() },
                                             onNavigateToTimers = { currentTab = AppTab.TIMERS }
                                         )
                                     }
                                     AppTab.SOURDOUGH -> {
-                                        SourdoughRecipesScreen(
-                                            sourdoughRecipes = sourdoughRecipes,
+                                        SourdoughTabContent(
+                                            viewModel = viewModel,
                                             onSelectRecipe = { recipe ->
                                                 currentScreen = ScreenState.RecipeDetail(recipe)
                                             },
@@ -312,20 +281,14 @@ class MainActivity : ComponentActivity() {
                                             onCreateCustomSourdough = {
                                                 currentScreen = ScreenState.RecipeEditor
                                             },
-                                            telemetry = telemetry,
                                             onViewLiveCountdown = {
                                                 currentTab = AppTab.DASHBOARD
                                             }
                                         )
                                     }
                                     AppTab.RECIPES -> {
-                                        RecipeLibraryScreen(
-                                            recipes = filteredRecipes,
-                                            searchQuery = searchQuery,
-                                            selectedCategory = selectedCategory,
-                                            categoryCounts = categoryCounts,
-                                            onSearchChange = { viewModel.onSearchQueryChange(it) },
-                                            onCategoryChange = { viewModel.onCategorySelect(it) },
+                                        RecipeLibraryTabContent(
+                                            viewModel = viewModel,
                                             onRecipeClick = { recipe ->
                                                 currentScreen = ScreenState.RecipeDetail(recipe)
                                             },
@@ -335,10 +298,7 @@ class MainActivity : ComponentActivity() {
                                             },
                                             onCreateCustomRecipe = {
                                                 currentScreen = ScreenState.RecipeEditor
-                                            },
-                                            onDeleteCustomRecipe = { viewModel.deleteCustomRecipe(it) },
-                                            onToggleFavorite = { viewModel.toggleFavoriteRecipe(it) },
-                                            currentModel = telemetry.model
+                                            }
                                         )
                                     }
                                     AppTab.TIMERS -> {
@@ -419,17 +379,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                     AppTab.SETTINGS -> {
-                                        MachineSettingsScreen(
-                                            telemetry = telemetry,
-                                            onToggleConnection = { viewModel.toggleConnection() },
-                                            onSelectModel = { viewModel.selectBreadMakerModel(it) },
-                                            onSelectZojirushiCourse = { viewModel.setZojirushiMenuCourse(it) },
-                                            onSelectMemorySlot = { viewModel.setHomemadeMemorySlot(it) },
-                                            onTogglePaddleReminder = { viewModel.togglePaddleRemovalReminder(it) },
-                                            onSetSimulationSpeed = { viewModel.setSimulationSpeed(it) },
-                                            onTestNotification = { viewModel.testIngredientNotification() },
-                                            onUpdateConverterSettings = { viewModel.updateConverterSettings(it) }
-                                        )
+                                        MachineSettingsTabContent(viewModel = viewModel)
                                     }
                                 }
                             }
@@ -439,4 +389,114 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+@Composable
+private fun DashboardTabContent(
+    viewModel: BreadMakerViewModel,
+    onNavigateToRecipes: () -> Unit,
+    onNavigateToTimers: () -> Unit
+) {
+    val telemetry by viewModel.telemetry.collectAsStateWithLifecycle()
+    val recipes by viewModel.recipes.collectAsStateWithLifecycle()
+
+    DashboardScreen(
+        telemetry = telemetry,
+        recipes = recipes,
+        onSelectRecipe = { viewModel.loadRecipe(it) },
+        onNavigateToRecipes = onNavigateToRecipes,
+        onToggleConnection = { viewModel.toggleConnection() },
+        onToggleLid = { viewModel.toggleLid() },
+        onTogglePanLock = { viewModel.togglePanLock() },
+        onToggleLamp = { viewModel.toggleInteriorLamp() },
+        onSkipStage = { viewModel.skipToNextStage() },
+        onJumpToStage = { viewModel.jumpToStage(it) },
+        onTestNotification = { viewModel.testIngredientNotification() },
+        onDismissAlert = { viewModel.dismissCurrentAlert() },
+        onPaddleRemoved = { viewModel.markPaddleRemoved() },
+        onAdjustProofTemp = { viewModel.adjustProofTemp(it) },
+        onAdjustBakeTemp = { viewModel.adjustBakeTemp(it) },
+        onToggleCrustBooster = { viewModel.toggleCrustBooster() },
+        onSelectCrust = { viewModel.setCrustShade(it) },
+        onSelectLoafSize = { viewModel.setLoafSize(it) },
+        onStartCycle = { viewModel.startBakingCycle() },
+        onPauseCycle = { viewModel.pauseBakingCycle() },
+        onResumeCycle = { viewModel.resumeBakingCycle() },
+        onStopCycle = { viewModel.stopBakingCycle() },
+        onSetSimulationSpeed = { viewModel.setSimulationSpeed(it) },
+        onExtendStage = { viewModel.extendCurrentStage(it) },
+        onDismissStepAlert = { viewModel.dismissStepCompletionAlert() },
+        onProceedNextStep = { viewModel.proceedToNextStep() },
+        onTestStepAlert = { viewModel.testProofingCountdownAlert() },
+        onNavigateToTimers = onNavigateToTimers
+    )
+}
+
+@Composable
+private fun SourdoughTabContent(
+    viewModel: BreadMakerViewModel,
+    onSelectRecipe: (BreadRecipe) -> Unit,
+    onLoadIntoBreadMaker: (BreadRecipe) -> Unit,
+    onCreateCustomSourdough: () -> Unit,
+    onViewLiveCountdown: () -> Unit
+) {
+    val sourdoughRecipes by viewModel.sourdoughRecipes.collectAsStateWithLifecycle()
+    val telemetry by viewModel.telemetry.collectAsStateWithLifecycle()
+
+    SourdoughRecipesScreen(
+        sourdoughRecipes = sourdoughRecipes,
+        onSelectRecipe = onSelectRecipe,
+        onLoadIntoBreadMaker = onLoadIntoBreadMaker,
+        onCreateCustomSourdough = onCreateCustomSourdough,
+        telemetry = telemetry,
+        onViewLiveCountdown = onViewLiveCountdown
+    )
+}
+
+@Composable
+private fun RecipeLibraryTabContent(
+    viewModel: BreadMakerViewModel,
+    onRecipeClick: (BreadRecipe) -> Unit,
+    onLoadRecipeIntoMachine: (BreadRecipe) -> Unit,
+    onCreateCustomRecipe: () -> Unit
+) {
+    val filteredRecipes by viewModel.filteredRecipes.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val categoryCounts by viewModel.categoryCounts.collectAsStateWithLifecycle()
+    val telemetry by viewModel.telemetry.collectAsStateWithLifecycle()
+
+    RecipeLibraryScreen(
+        recipes = filteredRecipes,
+        searchQuery = searchQuery,
+        selectedCategory = selectedCategory,
+        categoryCounts = categoryCounts,
+        onSearchChange = { viewModel.onSearchQueryChange(it) },
+        onCategoryChange = { viewModel.onCategorySelect(it) },
+        onRecipeClick = onRecipeClick,
+        onLoadRecipeIntoMachine = onLoadRecipeIntoMachine,
+        onCreateCustomRecipe = onCreateCustomRecipe,
+        onDeleteCustomRecipe = { viewModel.deleteCustomRecipe(it) },
+        onToggleFavorite = { viewModel.toggleFavoriteRecipe(it) },
+        currentModel = telemetry.model
+    )
+}
+
+@Composable
+private fun MachineSettingsTabContent(
+    viewModel: BreadMakerViewModel
+) {
+    val telemetry by viewModel.telemetry.collectAsStateWithLifecycle()
+
+    MachineSettingsScreen(
+        telemetry = telemetry,
+        onToggleConnection = { viewModel.toggleConnection() },
+        onSelectModel = { viewModel.selectBreadMakerModel(it) },
+        onSelectZojirushiCourse = { viewModel.setZojirushiMenuCourse(it) },
+        onSelectMemorySlot = { viewModel.setHomemadeMemorySlot(it) },
+        onTogglePaddleReminder = { viewModel.togglePaddleRemovalReminder(it) },
+        onSetSimulationSpeed = { viewModel.setSimulationSpeed(it) },
+        onTestNotification = { viewModel.testIngredientNotification() },
+        onUpdateConverterSettings = { viewModel.updateConverterSettings(it) }
+    )
 }
