@@ -4,9 +4,11 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
+import com.example.data.local.BreadMachineCycleTrackerEntity
 import com.example.data.local.PreloadedRecipes
 import com.example.data.model.BakingStage
 import com.example.data.model.BakingStageType
+import com.example.data.model.BreadMachineCycle
 import com.example.data.model.BreadMakerModel
 import com.example.data.model.BreadRecipe
 import com.example.data.model.BreadStageTimer
@@ -15,6 +17,7 @@ import com.example.data.model.IngredientAlert
 import com.example.data.model.LoafSize
 import com.example.data.model.MachineState
 import com.example.data.model.MachineTelemetry
+import com.example.data.model.PreloadedBreadMachineCycles
 import com.example.data.model.PreloadedTimerRoutines
 import com.example.data.model.RecipeCategory
 import com.example.data.model.StageTimersState
@@ -71,10 +74,16 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
 
     private var stageCountdownJob: Job? = null
     private var tickerJob: Job? = null
+    private var trackedCycleJob: Job? = null
 
     init {
         val db = AppDatabase.getDatabase(application)
-        repository = RecipeRepository(db.recipeDao(), db.customRecipeDao(), db.favoriteRecipeDao())
+        repository = RecipeRepository(
+            db.recipeDao(),
+            db.customRecipeDao(),
+            db.favoriteRecipeDao(),
+            db.cycleTrackingDao()
+        )
 
         viewModelScope.launch {
             repository.ensureSeeded()
@@ -84,6 +93,14 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
         val defaultRecipe = PreloadedRecipes.SOURDOUGH_RECIPES.first()
         loadRecipe(defaultRecipe)
     }
+
+    // Reactive flow of active bread machine cycle tracker persisted in Room
+    val activeCycleTracker: StateFlow<BreadMachineCycleTrackerEntity?> = repository.activeCycleTracker
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = BreadMachineCycleTrackerEntity.fromCycle(PreloadedBreadMachineCycles.WHITE_BREAD)
+        )
 
     val sourdoughRecipes: StateFlow<List<BreadRecipe>> = repository.sourdoughRecipes
         .stateIn(
@@ -1058,5 +1075,274 @@ class BreadMakerViewModel(application: Application) : AndroidViewModel(applicati
                 }
             }
         }
+    }
+
+    // =========================================================================
+    // ROOM-BACKED MULTI-STAGE BREAD MACHINE CYCLE TRACKING & ADD-INS ALARMS
+    // =========================================================================
+
+    fun startTrackedCycle(cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID) {
+        viewModelScope.launch {
+            val current = repository.getActiveCycleTracker()
+                ?: BreadMachineCycleTrackerEntity.fromCycle(PreloadedBreadMachineCycles.WHITE_BREAD)
+            val updated = current.copy(
+                status = BreadMachineCycleTrackerEntity.STATUS_RUNNING,
+                lastUpdatedTimestamp = System.currentTimeMillis()
+            )
+            repository.saveOrUpdateCycleTracker(updated)
+            startTrackedCycleTicker(cycleId)
+            showFeedback("▶️ Started multi-stage tracking for ${current.cycleName} (Room DB)")
+        }
+    }
+
+    fun pauseTrackedCycle(cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID) {
+        trackedCycleJob?.cancel()
+        trackedCycleJob = null
+        viewModelScope.launch {
+            repository.updateCycleStatus(cycleId, BreadMachineCycleTrackerEntity.STATUS_PAUSED)
+            showFeedback("⏸️ Paused cycle tracking")
+        }
+    }
+
+    fun resumeTrackedCycle(cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID) {
+        viewModelScope.launch {
+            repository.updateCycleStatus(cycleId, BreadMachineCycleTrackerEntity.STATUS_RUNNING)
+            startTrackedCycleTicker(cycleId)
+            showFeedback("▶️ Resumed cycle tracking")
+        }
+    }
+
+    fun resetTrackedCycle(cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID) {
+        trackedCycleJob?.cancel()
+        trackedCycleJob = null
+        viewModelScope.launch {
+            repository.resetCycleTracker(cycleId)
+            showFeedback("🔄 Reset cycle tracking to beginning (Room DB)")
+        }
+    }
+
+    fun selectCycleForTracker(
+        cycle: BreadMachineCycle,
+        cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID
+    ) {
+        trackedCycleJob?.cancel()
+        trackedCycleJob = null
+        viewModelScope.launch {
+            val existing = repository.getActiveCycleTracker()
+            val customItems = existing?.addInItems
+            val newEntity = BreadMachineCycleTrackerEntity.fromCycle(
+                cycle = cycle,
+                cycleId = cycleId,
+                customAddIns = customItems
+            )
+            repository.saveOrUpdateCycleTracker(newEntity)
+            showFeedback("Loaded ${cycle.name} into Room cycle tracker")
+        }
+    }
+
+    fun skipToNextTrackedStage(cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID) {
+        viewModelScope.launch {
+            val current = repository.getActiveCycleTracker() ?: return@launch
+            val nextIndex = current.currentStageIndex + 1
+            if (nextIndex < current.stages.size) {
+                var priorSecs = 0
+                for (i in 0 until nextIndex) {
+                    priorSecs += current.stages[i].durationMinutes * 60
+                }
+                val nextStage = current.stages[nextIndex]
+                val updated = current.copy(
+                    currentStageIndex = nextIndex,
+                    stageElapsedSeconds = 0,
+                    stageDurationSeconds = nextStage.durationMinutes * 60,
+                    totalElapsedSeconds = priorSecs,
+                    lastUpdatedTimestamp = System.currentTimeMillis()
+                )
+                repository.saveOrUpdateCycleTracker(updated)
+                checkTrackedAddInAlert(updated)
+                showFeedback("Advanced to stage: ${nextStage.title}")
+            } else {
+                completeTrackedCycle(current)
+            }
+        }
+    }
+
+    fun jumpToTrackedStage(
+        stageIndex: Int,
+        cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID
+    ) {
+        viewModelScope.launch {
+            val current = repository.getActiveCycleTracker() ?: return@launch
+            if (stageIndex in current.stages.indices) {
+                var priorSecs = 0
+                for (i in 0 until stageIndex) {
+                    priorSecs += current.stages[i].durationMinutes * 60
+                }
+                val stage = current.stages[stageIndex]
+                val updated = current.copy(
+                    currentStageIndex = stageIndex,
+                    stageElapsedSeconds = 0,
+                    stageDurationSeconds = stage.durationMinutes * 60,
+                    totalElapsedSeconds = priorSecs,
+                    lastUpdatedTimestamp = System.currentTimeMillis()
+                )
+                repository.saveOrUpdateCycleTracker(updated)
+                checkTrackedAddInAlert(updated)
+                showFeedback("Jumped to stage: ${stage.title}")
+            }
+        }
+    }
+
+    fun setTrackedCycleSimulationSpeed(
+        speed: Int,
+        cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID
+    ) {
+        viewModelScope.launch {
+            repository.updateSimulationSpeed(cycleId, speed.coerceIn(1, 60))
+            showFeedback("Cycle tracking speed set to ${speed}x")
+        }
+    }
+
+    fun acknowledgeAddInAlarm(cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID) {
+        viewModelScope.launch {
+            repository.updateAddInAlarm(cycleId, triggered = false, acknowledged = true)
+            showFeedback("✓ Add-ins (raisins, nuts, seeds) added! Chime acknowledged.")
+        }
+    }
+
+    fun triggerTestAddInAlarm(cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID) {
+        viewModelScope.launch {
+            val current = repository.getActiveCycleTracker()
+                ?: BreadMachineCycleTrackerEntity.fromCycle(PreloadedBreadMachineCycles.WHITE_BREAD)
+            repository.updateAddInAlarm(cycleId, triggered = true, acknowledged = false)
+
+            if (current.addInChimeSound) {
+                notificationHelper.sendIngredientAlert(
+                    title = "Add-Ins Dispenser Chime: Raisins & Nuts",
+                    message = "Dispenser alarm active! Add raisins, nuts, or seeds now before final proof.",
+                    stageName = current.addInStageName,
+                    itemsToAdd = current.addInItems
+                )
+            }
+            showFeedback("🔔 Alarm Test: Add raisins, nuts, or seeds! Chime ringing.")
+        }
+    }
+
+    fun updateAddInItems(
+        items: List<String>,
+        cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID
+    ) {
+        viewModelScope.launch {
+            repository.updateAddInItems(cycleId, items)
+            showFeedback("Updated add-ins list in Room database (${items.size} items)")
+        }
+    }
+
+    fun toggleAddInChimeSound(
+        enabled: Boolean,
+        cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID
+    ) {
+        viewModelScope.launch {
+            val current = repository.getActiveCycleTracker() ?: return@launch
+            repository.updateAddInChimeSettings(cycleId, chimeSound = enabled, vibrate = current.addInVibrate)
+            showFeedback(if (enabled) "🔔 Add-in audible chime enabled" else "🔕 Add-in audible chime muted")
+        }
+    }
+
+    fun toggleAddInVibrate(
+        enabled: Boolean,
+        cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID
+    ) {
+        viewModelScope.launch {
+            val current = repository.getActiveCycleTracker() ?: return@launch
+            repository.updateAddInChimeSettings(cycleId, chimeSound = current.addInChimeSound, vibrate = enabled)
+            showFeedback(if (enabled) "📳 Add-in vibration enabled" else "Add-in vibration disabled")
+        }
+    }
+
+    private fun startTrackedCycleTicker(cycleId: String) {
+        trackedCycleJob?.cancel()
+        trackedCycleJob = viewModelScope.launch {
+            while (isActive) {
+                val current = repository.getActiveCycleTracker() ?: break
+                if (current.status != BreadMachineCycleTrackerEntity.STATUS_RUNNING) break
+
+                val speed = current.simulationSpeed.coerceIn(1, 60)
+                val stepDelay = if (speed > 10) 250L else (1000L / speed)
+                val stepDelta = if (speed > 10) (speed / 4).coerceAtLeast(1) else 1
+
+                delay(stepDelay)
+
+                val newStageElapsed = current.stageElapsedSeconds + stepDelta
+                val newTotalElapsed = (current.totalElapsedSeconds + stepDelta).coerceAtMost(current.totalDurationSeconds)
+
+                // Check for add-in alarm trigger during add-in stage (e.g. Knead 2)
+                if (current.currentStageIndex == current.addInStageIndex &&
+                    !current.addInAlarmTriggered &&
+                    !current.addInAlarmAcknowledged
+                ) {
+                    val triggerSecs = (current.addInMinuteMark * 60).coerceAtMost((current.stageDurationSeconds * 0.75f).toInt())
+                    if (newStageElapsed >= triggerSecs || newStageElapsed >= (current.stageDurationSeconds / 2)) {
+                        repository.updateAddInAlarm(cycleId, triggered = true, acknowledged = false)
+                        if (current.addInChimeSound) {
+                            notificationHelper.sendIngredientAlert(
+                                title = "Add-Ins Dispenser Chime: Raisins & Nuts",
+                                message = "Add raisins, chopped nuts, or seeds to your dough now!",
+                                stageName = current.addInStageName,
+                                itemsToAdd = current.addInItems
+                            )
+                        }
+                    }
+                }
+
+                if (newStageElapsed >= current.stageDurationSeconds) {
+                    val nextIndex = current.currentStageIndex + 1
+                    if (nextIndex < current.stages.size) {
+                        val nextStage = current.stages[nextIndex]
+                        val updated = current.copy(
+                            currentStageIndex = nextIndex,
+                            stageElapsedSeconds = 0,
+                            stageDurationSeconds = nextStage.durationMinutes * 60,
+                            totalElapsedSeconds = newTotalElapsed,
+                            lastUpdatedTimestamp = System.currentTimeMillis()
+                        )
+                        repository.saveOrUpdateCycleTracker(updated)
+                        checkTrackedAddInAlert(updated)
+                    } else {
+                        completeTrackedCycle(current)
+                        break
+                    }
+                } else {
+                    repository.updateCycleProgress(cycleId, current.currentStageIndex, newStageElapsed, newTotalElapsed)
+                }
+            }
+        }
+    }
+
+    private suspend fun checkTrackedAddInAlert(entity: BreadMachineCycleTrackerEntity) {
+        if (entity.currentStageIndex == entity.addInStageIndex && !entity.addInAlarmAcknowledged) {
+            repository.updateAddInAlarm(entity.cycleId, triggered = true, acknowledged = false)
+            if (entity.addInChimeSound) {
+                notificationHelper.sendIngredientAlert(
+                    title = "Add-Ins Dispenser Chime: Raisins & Nuts",
+                    message = "Cycle has entered ${entity.addInStageName}. Add your raisins, walnuts, or seeds now!",
+                    stageName = entity.addInStageName,
+                    itemsToAdd = entity.addInItems
+                )
+            }
+        }
+    }
+
+    private suspend fun completeTrackedCycle(entity: BreadMachineCycleTrackerEntity) {
+        trackedCycleJob?.cancel()
+        trackedCycleJob = null
+        val completed = entity.copy(
+            status = BreadMachineCycleTrackerEntity.STATUS_COMPLETED,
+            stageElapsedSeconds = entity.stageDurationSeconds,
+            totalElapsedSeconds = entity.totalDurationSeconds,
+            lastUpdatedTimestamp = System.currentTimeMillis()
+        )
+        repository.saveOrUpdateCycleTracker(completed)
+        notificationHelper.sendBakeCompleteNotification(entity.cycleName)
+        showFeedback("🎉 Multi-stage bread machine cycle complete: ${entity.cycleName}!")
     }
 }

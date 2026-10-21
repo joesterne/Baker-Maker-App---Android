@@ -6,17 +6,19 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.data.model.PreloadedBreadMachineCycles
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@Database(entities = [RecipeEntity::class, CustomRecipeEntity::class, FavoriteRecipeEntity::class], version = 6, exportSchema = false)
+@Database(entities = [RecipeEntity::class, CustomRecipeEntity::class, FavoriteRecipeEntity::class, BreadMachineCycleTrackerEntity::class], version = 7, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun recipeDao(): RecipeDao
     abstract fun customRecipeDao(): CustomRecipeDao
     abstract fun favoriteRecipeDao(): FavoriteRecipeDao
+    abstract fun cycleTrackingDao(): BreadCycleTrackingDao
 
     companion object {
         @Volatile
@@ -33,13 +35,14 @@ abstract class AppDatabase : RoomDatabase() {
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
-                            // Prepopulate Room database with initial sourdough, specialty, and official manual recipes
+                            // Prepopulate Room database with initial sourdough, specialty, official recipes, and cycle tracking
                             INSTANCE?.let { database ->
                                 CoroutineScope(Dispatchers.IO).launch {
                                     seedInitialRecipes(
                                         database.recipeDao(),
                                         database.customRecipeDao(),
-                                        database.favoriteRecipeDao()
+                                        database.favoriteRecipeDao(),
+                                        database.cycleTrackingDao()
                                     )
                                 }
                             }
@@ -54,7 +57,8 @@ abstract class AppDatabase : RoomDatabase() {
         suspend fun seedInitialRecipes(
             dao: RecipeDao,
             customDao: CustomRecipeDao? = null,
-            favoriteDao: FavoriteRecipeDao? = null
+            favoriteDao: FavoriteRecipeDao? = null,
+            cycleDao: BreadCycleTrackingDao? = null
         ) {
             withContext(Dispatchers.IO) {
                 if (dao.getRecipeCount() == 0) {
@@ -98,6 +102,17 @@ abstract class AppDatabase : RoomDatabase() {
                             )
                         )
                         fDao.insertAll(initialFavorites)
+                    }
+                }
+
+                // Seed initial active bread machine cycle tracker in Room
+                cycleDao?.let { cDao ->
+                    if (cDao.getCycleCount() == 0) {
+                        cDao.insertOrUpdate(
+                            BreadMachineCycleTrackerEntity.fromCycle(
+                                PreloadedBreadMachineCycles.WHITE_BREAD
+                            )
+                        )
                     }
                 }
             }

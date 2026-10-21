@@ -77,10 +77,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.local.BreadMachineCycleTrackerEntity
 import com.example.data.model.BakingStage
 import com.example.data.model.BakingStageType
 import com.example.data.model.BreadMachineCycle
 import com.example.data.model.PreloadedBreadMachineCycles
+import com.example.ui.components.BreadMachineCycleTrackerCard
 import com.example.ui.theme.AlertBerryRed
 import com.example.ui.theme.BakeFireOrange
 import com.example.ui.theme.BreadAmber
@@ -99,6 +101,20 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BreadMachineCyclesTimerScreen(
+    tracker: BreadMachineCycleTrackerEntity? = null,
+    onStartTracker: (() -> Unit)? = null,
+    onPauseTracker: (() -> Unit)? = null,
+    onResumeTracker: (() -> Unit)? = null,
+    onResetTracker: (() -> Unit)? = null,
+    onSkipTrackedStage: (() -> Unit)? = null,
+    onJumpToTrackedStage: ((Int) -> Unit)? = null,
+    onSelectTrackedCycle: ((BreadMachineCycle) -> Unit)? = null,
+    onSetTrackedSpeed: ((Int) -> Unit)? = null,
+    onAcknowledgeAddInAlarm: (() -> Unit)? = null,
+    onTestAddInAlarm: (() -> Unit)? = null,
+    onUpdateAddInItems: ((List<String>) -> Unit)? = null,
+    onToggleChimeSound: ((Boolean) -> Unit)? = null,
+    onToggleVibrate: ((Boolean) -> Unit)? = null,
     initialCycle: BreadMachineCycle = PreloadedBreadMachineCycles.WHITE_BREAD,
     onLoadCycleIntoBaker: ((BreadMachineCycle) -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -189,6 +205,26 @@ fun BreadMachineCyclesTimerScreen(
             .testTag("bread_machine_cycles_timer_screen"),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Dedicated Room-Backed Multi-Stage Cycle Tracker with Add-In Alarms
+        if (tracker != null) {
+            BreadMachineCycleTrackerCard(
+                tracker = tracker,
+                onStart = { onStartTracker?.invoke() },
+                onPause = { onPauseTracker?.invoke() },
+                onResume = { onResumeTracker?.invoke() },
+                onReset = { onResetTracker?.invoke() },
+                onSkipStage = { onSkipTrackedStage?.invoke() },
+                onJumpToStage = { onJumpToTrackedStage?.invoke(it) },
+                onSelectCycle = { onSelectTrackedCycle?.invoke(it) },
+                onSetSpeed = { onSetTrackedSpeed?.invoke(it) },
+                onAcknowledgeAlarm = { onAcknowledgeAddInAlarm?.invoke() },
+                onTestAddInAlarm = { onTestAddInAlarm?.invoke() },
+                onUpdateAddInItems = { onUpdateAddInItems?.invoke(it) },
+                onToggleChimeSound = { onToggleChimeSound?.invoke(it) },
+                onToggleVibrate = { onToggleVibrate?.invoke(it) }
+            )
+        }
+
         // Screen Header & Title
         Row(
             modifier = Modifier.fillMaxWidth(),

@@ -1,6 +1,8 @@
 package com.example.data.repository
 
 import com.example.data.local.AppDatabase
+import com.example.data.local.BreadCycleTrackingDao
+import com.example.data.local.BreadMachineCycleTrackerEntity
 import com.example.data.local.CustomRecipeDao
 import com.example.data.local.CustomRecipeEntity
 import com.example.data.local.FavoriteRecipeDao
@@ -8,6 +10,7 @@ import com.example.data.local.FavoriteRecipeEntity
 import com.example.data.local.RecipeDao
 import com.example.data.local.RecipeEntity
 import com.example.data.model.BreadRecipe
+import com.example.data.model.PreloadedBreadMachineCycles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -15,8 +18,13 @@ import kotlinx.coroutines.flow.map
 class RecipeRepository(
     private val recipeDao: RecipeDao,
     private val customRecipeDao: CustomRecipeDao,
-    private val favoriteRecipeDao: FavoriteRecipeDao
+    private val favoriteRecipeDao: FavoriteRecipeDao,
+    private val cycleTrackingDao: BreadCycleTrackingDao
 ) {
+
+    // Reactive flow of active bread machine cycle tracker persisted in Room
+    val activeCycleTracker: Flow<BreadMachineCycleTrackerEntity?> =
+        cycleTrackingDao.getCycleFlow()
 
     // Direct Room query for sourdough recipes combined with persistent favorites & bake stats
     val sourdoughRecipes: Flow<List<BreadRecipe>> = combine(
@@ -143,9 +151,60 @@ class RecipeRepository(
     }
 
     suspend fun ensureSeeded() {
-        if (recipeDao.getRecipeCount() == 0 || customRecipeDao.getCustomRecipeCount() == 0 || favoriteRecipeDao.getFavoriteCount() == 0) {
-            AppDatabase.seedInitialRecipes(recipeDao, customRecipeDao, favoriteRecipeDao)
+        if (recipeDao.getRecipeCount() == 0 || customRecipeDao.getCustomRecipeCount() == 0 || favoriteRecipeDao.getFavoriteCount() == 0 || cycleTrackingDao.getCycleCount() == 0) {
+            AppDatabase.seedInitialRecipes(recipeDao, customRecipeDao, favoriteRecipeDao, cycleTrackingDao)
         }
+    }
+
+    // --- Bread Machine Cycle Tracking Room Operations ---
+
+    suspend fun getActiveCycleTracker(): BreadMachineCycleTrackerEntity? {
+        return cycleTrackingDao.getCycle()
+    }
+
+    suspend fun saveOrUpdateCycleTracker(entity: BreadMachineCycleTrackerEntity) {
+        cycleTrackingDao.insertOrUpdate(entity)
+    }
+
+    suspend fun updateCycleStatus(cycleId: String, status: String) {
+        cycleTrackingDao.updateStatus(cycleId, status)
+    }
+
+    suspend fun updateCycleProgress(cycleId: String, stageIndex: Int, stageElapsed: Int, totalElapsed: Int) {
+        cycleTrackingDao.updateProgress(cycleId, stageIndex, stageElapsed, totalElapsed)
+    }
+
+    suspend fun updateAddInAlarm(cycleId: String, triggered: Boolean, acknowledged: Boolean) {
+        cycleTrackingDao.updateAddInAlarm(cycleId, triggered, acknowledged)
+    }
+
+    suspend fun updateAddInItems(cycleId: String, items: List<String>) {
+        cycleTrackingDao.updateAddInItems(cycleId, items)
+    }
+
+    suspend fun updateAddInChimeSettings(cycleId: String, chimeSound: Boolean, vibrate: Boolean) {
+        cycleTrackingDao.updateAddInChimeSettings(cycleId, chimeSound, vibrate)
+    }
+
+    suspend fun updateSimulationSpeed(cycleId: String, speed: Int) {
+        cycleTrackingDao.updateSimulationSpeed(cycleId, speed)
+    }
+
+    suspend fun resetCycleTracker(cycleId: String = BreadMachineCycleTrackerEntity.DEFAULT_TRACKER_ID) {
+        val current = cycleTrackingDao.getCycle(cycleId) ?: return
+        val firstStage = current.stages.firstOrNull()
+        val firstStageSecs = (firstStage?.durationMinutes ?: 0) * 60
+        val resetEntity = current.copy(
+            status = BreadMachineCycleTrackerEntity.STATUS_IDLE,
+            currentStageIndex = 0,
+            stageElapsedSeconds = 0,
+            stageDurationSeconds = firstStageSecs,
+            totalElapsedSeconds = 0,
+            addInAlarmTriggered = false,
+            addInAlarmAcknowledged = false,
+            lastUpdatedTimestamp = System.currentTimeMillis()
+        )
+        cycleTrackingDao.insertOrUpdate(resetEntity)
     }
 
     suspend fun saveRecipe(recipe: BreadRecipe) {

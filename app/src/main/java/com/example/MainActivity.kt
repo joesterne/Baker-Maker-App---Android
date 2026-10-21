@@ -351,7 +351,22 @@ class MainActivity : ComponentActivity() {
                                             }
 
                                             if (timerSubTab == 0) {
+                                                val activeTracker by viewModel.activeCycleTracker.collectAsStateWithLifecycle()
                                                 BreadMachineCyclesTimerScreen(
+                                                    tracker = activeTracker,
+                                                    onStartTracker = { viewModel.startTrackedCycle() },
+                                                    onPauseTracker = { viewModel.pauseTrackedCycle() },
+                                                    onResumeTracker = { viewModel.resumeTrackedCycle() },
+                                                    onResetTracker = { viewModel.resetTrackedCycle() },
+                                                    onSkipTrackedStage = { viewModel.skipToNextTrackedStage() },
+                                                    onJumpToTrackedStage = { viewModel.jumpToTrackedStage(it) },
+                                                    onSelectTrackedCycle = { viewModel.selectCycleForTracker(it) },
+                                                    onSetTrackedSpeed = { viewModel.setTrackedCycleSimulationSpeed(it) },
+                                                    onAcknowledgeAddInAlarm = { viewModel.acknowledgeAddInAlarm() },
+                                                    onTestAddInAlarm = { viewModel.triggerTestAddInAlarm() },
+                                                    onUpdateAddInItems = { viewModel.updateAddInItems(it) },
+                                                    onToggleChimeSound = { viewModel.toggleAddInChimeSound(it) },
+                                                    onToggleVibrate = { viewModel.toggleAddInVibrate(it) },
                                                     onLoadCycleIntoBaker = { cycle ->
                                                         viewModel.setZojirushiMenuCourse(cycle.course)
                                                         currentTab = AppTab.DASHBOARD
@@ -399,6 +414,7 @@ private fun DashboardTabContent(
 ) {
     val telemetry by viewModel.telemetry.collectAsStateWithLifecycle()
     val recipes by viewModel.recipes.collectAsStateWithLifecycle()
+    val activeTracker by viewModel.activeCycleTracker.collectAsStateWithLifecycle()
 
     DashboardScreen(
         telemetry = telemetry,
@@ -428,7 +444,21 @@ private fun DashboardTabContent(
         onDismissStepAlert = { viewModel.dismissStepCompletionAlert() },
         onProceedNextStep = { viewModel.proceedToNextStep() },
         onTestStepAlert = { viewModel.testProofingCountdownAlert() },
-        onNavigateToTimers = onNavigateToTimers
+        onNavigateToTimers = onNavigateToTimers,
+        cycleTracker = activeTracker,
+        onStartTracker = { viewModel.startTrackedCycle() },
+        onPauseTracker = { viewModel.pauseTrackedCycle() },
+        onResumeTracker = { viewModel.resumeTrackedCycle() },
+        onResetTracker = { viewModel.resetTrackedCycle() },
+        onSkipTrackedStage = { viewModel.skipToNextTrackedStage() },
+        onJumpToTrackedStage = { viewModel.jumpToTrackedStage(it) },
+        onSelectTrackedCycle = { viewModel.selectCycleForTracker(it) },
+        onSetTrackedSpeed = { viewModel.setTrackedCycleSimulationSpeed(it) },
+        onAcknowledgeAddInAlarm = { viewModel.acknowledgeAddInAlarm() },
+        onTestAddInAlarm = { viewModel.triggerTestAddInAlarm() },
+        onUpdateAddInItems = { viewModel.updateAddInItems(it) },
+        onToggleChimeSound = { viewModel.toggleAddInChimeSound(it) },
+        onToggleVibrate = { viewModel.toggleAddInVibrate(it) }
     )
 }
 

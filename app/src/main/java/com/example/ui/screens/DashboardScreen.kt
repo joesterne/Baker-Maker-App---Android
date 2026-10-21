@@ -46,8 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.filled.AutoFixHigh
+import com.example.data.local.BreadMachineCycleTrackerEntity
+import com.example.data.model.BreadMachineCycle
 import com.example.data.model.BreadRecipe
 import com.example.data.model.MachineTelemetry
+import com.example.ui.components.BreadMachineCycleTrackerCard
 import com.example.ui.components.HydrationCalculatorSheet
 import com.example.ui.components.IngredientAlertBanner
 import com.example.ui.components.LoafTroubleshootingSection
@@ -90,6 +93,20 @@ fun DashboardScreen(
     onProceedNextStep: () -> Unit = {},
     onTestStepAlert: () -> Unit = {},
     onNavigateToTimers: () -> Unit = {},
+    cycleTracker: BreadMachineCycleTrackerEntity? = null,
+    onStartTracker: (() -> Unit)? = null,
+    onPauseTracker: (() -> Unit)? = null,
+    onResumeTracker: (() -> Unit)? = null,
+    onResetTracker: (() -> Unit)? = null,
+    onSkipTrackedStage: (() -> Unit)? = null,
+    onJumpToTrackedStage: ((Int) -> Unit)? = null,
+    onSelectTrackedCycle: ((BreadMachineCycle) -> Unit)? = null,
+    onSetTrackedSpeed: ((Int) -> Unit)? = null,
+    onAcknowledgeAddInAlarm: (() -> Unit)? = null,
+    onTestAddInAlarm: (() -> Unit)? = null,
+    onUpdateAddInItems: ((List<String>) -> Unit)? = null,
+    onToggleChimeSound: ((Boolean) -> Unit)? = null,
+    onToggleVibrate: ((Boolean) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showHydrationSheet by remember { mutableStateOf(false) }
@@ -369,6 +386,26 @@ fun DashboardScreen(
             onTogglePanLock = onTogglePanLock,
             onToggleLamp = onToggleLamp
         )
+
+        // Dedicated Room-Backed Multi-Stage Bread Machine Cycle Tracker with Add-Ins Alarms
+        if (cycleTracker != null) {
+            BreadMachineCycleTrackerCard(
+                tracker = cycleTracker,
+                onStart = { onStartTracker?.invoke() },
+                onPause = { onPauseTracker?.invoke() },
+                onResume = { onResumeTracker?.invoke() },
+                onReset = { onResetTracker?.invoke() },
+                onSkipStage = { onSkipTrackedStage?.invoke() },
+                onJumpToStage = { onJumpToTrackedStage?.invoke(it) },
+                onSelectCycle = { onSelectTrackedCycle?.invoke(it) },
+                onSetSpeed = { onSetTrackedSpeed?.invoke(it) },
+                onAcknowledgeAlarm = { onAcknowledgeAddInAlarm?.invoke() },
+                onTestAddInAlarm = { onTestAddInAlarm?.invoke() },
+                onUpdateAddInItems = { onUpdateAddInItems?.invoke(it) },
+                onToggleChimeSound = { onToggleChimeSound?.invoke(it) },
+                onToggleVibrate = { onToggleVibrate?.invoke(it) }
+            )
+        }
 
         // Sourdough Proofing & Baking Precision Countdown Timer & Step Completion Alert
         SourdoughCountdownTimerCard(

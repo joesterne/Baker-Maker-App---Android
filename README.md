@@ -11,12 +11,13 @@ CrustCraft pairs precision stage countdown telemetry, Baker's Percentage hydrati
 CrustCraft is built **offline-first**. Every core baking capability, formula calculation, and diagnostic evaluation operates completely without an internet connection:
 
 ### 1. 🗄️ On-Device Room Database Persistence
-- **Zero Cloud Dependency for Core Baking:** All artisanal recipes, custom user-created recipes, favorite states, and lifetime bake logs are stored locally using SQLite via Android Room (`crustcraft_database`, schema version 6).
+- **Zero Cloud Dependency for Core Baking:** All artisanal recipes, custom user-created recipes, favorite states, lifetime bake logs, and multi-stage bread machine cycle trackers are stored locally using SQLite via Android Room (`crustcraft_database`, schema version 7).
 - **Persistent Tables:**
   - `recipes`: Preloaded sourdough, milk bread, and artisan formulas seeded automatically on initial launch.
   - `custom_recipes`: User-authored recipes with custom ingredient weights, hydration percentages, program cycles, and baker notes.
   - `favorite_recipes`: Persistent favorite bookmarks and lifetime bake counts (`bakeCount`) with timestamps of the last bake.
-- **Reactive Data Layer:** Repositories emit Kotlin Coroutine `Flow` streams directly from Room DAOs (`RecipeDao`, `CustomRecipeDao`, `FavoriteRecipeDao`), ensuring UI changes update reactively with zero lag.
+  - `cycle_tracking`: Multi-stage bread machine cycle tracking sessions (current stage, elapsed and remaining seconds, target temperatures, motor RPM, and 'add-ins' alarm configurations with customizable mix-ins like raisins, walnuts, cranberries, and seeds).
+- **Reactive Data Layer:** Repositories emit Kotlin Coroutine `Flow` streams directly from Room DAOs (`RecipeDao`, `CustomRecipeDao`, `FavoriteRecipeDao`, `BreadCycleTrackingDao`), ensuring UI changes update reactively with zero lag.
 
 ### 2. 📡 Intelligent Dual-Engine Diagnostic Fallback
 - **Online Mode:** When connected to the internet and configured with a Gemini API key, the Loaf Doctor invokes Google's `gemini-3.5-flash` model via Retrofit for deep multimodal computer-vision diagnosis of loaf pictures and interactive multi-turn troubleshooting conversations.
@@ -71,7 +72,14 @@ CrustCraft is built **offline-first**. Every core baking capability, formula cal
 - **Scale & Unit Converter:** Convert fluid ounces, grams, milliliters, and cups with liquid density adjustment (water, milk, buttermilk, honey, oil).
 - **Loaf Capacity Scaling:** Scale recipes dynamically between 1.0 lb, 1.5 lb, and 2.0 lb pan capacities.
 
-### 5. ⏱️ Bread Machine Cycles & Stage Workflows
+### 5. 🍞 Room-Backed Multi-Stage Bread Machine Cycle Tracker & Add-In Alarms
+- **Dedicated Multi-Stage Cycle Tracker UI Component (`BreadMachineCycleTrackerCard`):** Persisted directly in SQLite via Room (`cycle_tracking` table).
+- **Stage Progression & Telemetry:** Visual multi-stage timeline across all 10 stages (*Preheat, Knead 1, Rest/Autolyse, Knead 2, Rise 1, Punch Down/Paddle Extraction, Rise 2, Rise 3, Bake, Keep Warm*), with live countdowns, target chamber temperatures (°F), and motor RPM.
+- **Dedicated 'Add-Ins' Alarms (Raisins & Nuts):**
+  - Timed dispenser chime automatically triggered during Knead 2 when dough elasticity is primed.
+  - Interactive audible beep toggle, haptic vibration alert, and prominent AlertBerryRed visual banner with one-tap acknowledgment (`Mark Add-Ins Added & Mute Chime`).
+  - Customizable mix-ins list persisted in Room (e.g. Thompson Raisins, Toasted Walnuts, Dried Cranberries, Pumpkin Seeds, Pecans, Chocolate Chips).
+  - Instant `Test Alarm` button to test push notifications, haptic vibrations, and visual alarm states.
 - **Zojirushi Menu Program Profiles:** Exact cycle timings for White, Whole Wheat, European, Sourdough Starter, Multigrain, Gluten-Free, Cake, and Dough courses.
 - **Standalone Stage Countdown Timers:** Dedicated timers for manual sourdough fermentations, stretch-and-fold intervals, and countertop proofing.
 
@@ -112,7 +120,9 @@ app/src/main/java/com/example/
 │   │   ├── GeminiApiService.kt             # Retrofit service interface & client
 │   │   └── GeminiModels.kt                 # Gemini request/response and ChatMessage models
 │   ├── local/
-│   │   ├── AppDatabase.kt                  # Room Database definition & initial seeders
+│   │   ├── AppDatabase.kt                  # Room Database definition & initial seeders (schema v7)
+│   │   ├── BreadCycleTrackingDao.kt        # Room DAO for multi-stage cycle tracking & add-in alarms
+│   │   ├── BreadMachineCycleTrackerEntity.kt# Room entity for cycle tracking state & mix-in alarms
 │   │   ├── Converters.kt                   # Room type converters (Moshi JSON)
 │   │   ├── CustomRecipeDao.kt              # Room DAO for custom user-authored recipes
 │   │   ├── CustomRecipeEntity.kt           # Room entity for custom recipes
@@ -124,16 +134,18 @@ app/src/main/java/com/example/
 │   │   ├── RecipeEntity.kt                 # Room entity for recipes
 │   │   └── ZojirushiManualRecipes.kt       # Official machine handbook recipes
 │   ├── model/
-│   │   ├── BreadModels.kt                  # Domain models (BreadRecipe, BreadMakerModel, etc.)
+│   │   ├── BreadMachineCycle.kt            # Cycle definitions, courses, and stage temperature/RPM profiles
+│   │   ├── BreadModels.kt                  # Domain models (BreadRecipe, BreadMakerModel, BakingStage, etc.)
 │   │   ├── StageTimerModel.kt              # Stage countdown workflows and model timing
 │   │   └── TroubleshootingModels.kt        # Symptom knowledge base & diagnostic rules (offline KB)
 │   └── repository/
-│       └── RecipeRepository.kt             # Unified data repository with Flow combines
+│       └── RecipeRepository.kt             # Unified data repository with Room Flow streams
 ├── ui/
 │   ├── components/
 │   │   ├── BakerMeasurementConverter.kt   # Volume-to-mass and density converter card
 │   │   ├── BakingChatBotSection.kt         # Multi-turn Gemini AI diagnostic chat UI with offline indicator
 │   │   ├── BakingUnitScaleConverter.kt     # Metric / Imperial baking unit scaler
+│   │   ├── BreadMachineCycleTrackerCard.kt # Dedicated Room-backed multi-stage cycle tracker & add-in alarm component
 │   │   ├── HydrationCalculatorSheet.kt     # Baker's percentage hydration modal sheet
 │   │   ├── IngredientAlertBanner.kt        # Timed add-in banner notification
 │   │   ├── LoafTroubleshootingSection.kt   # "Loaf Doctor" diagnosis & prompt view
